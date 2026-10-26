@@ -131,6 +131,15 @@ try {
     post(`трасса ${ktOp}: записей эталона ${len}, совпало первых ${i}`);
     for (let k = Math.max(0, i - 4); k < Math.min(len, i + 3); k++)
       post(`  #${k} строка ${want[2 * k]}: эталон ${fv(want[2 * k + 1])} (${want[2 * k + 1].toString(16)})  web строка ${got[2 * k]} ${fv(got[2 * k + 1])} (${got[2 * k + 1].toString(16)})`);
+    // выходы размеченного запуска против эталона (buffers/*.traced.bin): разметка
+    // может сама убрать расхождение, тогда трасса совпадает, а без неё - нет
+    const mem = await r.read(r.buffersEnd);
+    for (const b of tape.buffers) {
+      const w = new Uint32Array((await bin(`${tapeDir}buffers/${b.id}.traced.bin`)).buffer);
+      const g = mem.subarray(r.base[b.id], r.base[b.id] + w.length);
+      let n = 0; for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) n++;
+      if (n) post(`выход: буфер ${b.id} ${b.label} не совпало ${n}`);
+    }
     post('ГОТОВО'); throw 'stop';
   }
   const stop = q.has('stop') ? +q.get('stop') : null;

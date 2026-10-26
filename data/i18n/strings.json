@@ -1012,6 +1012,10 @@
 "at": "web/view.js"
 },
 {
+"ru": "браузер не дал доступ к видеокарте (WebGPU): на Android откройте сайт в Chrome, на компьютере - в Chrome, Edge или Safari",
+"at": "web/view.js"
+},
+{
 "ru": "ОШИБКА GPU",
 "at": "web/view.js"
 },

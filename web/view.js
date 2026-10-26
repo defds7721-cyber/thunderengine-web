@@ -329,6 +329,8 @@ async function init() {
   fillScenarios(P.listPresets());
   setupGeo();
   const adapter = await navigator.gpu.requestAdapter();
+  // WebGPU объявлен, но видеокарта не выдана (Android вне Chrome 121+/Android 12+, чёрный список драйверов)
+  if (!adapter) { post('браузер не дал доступ к видеокарте (WebGPU): на Android откройте сайт в Chrome, на компьютере - в Chrome, Edge или Safari'); return; }
   device = await adapter.requestDevice({ requiredLimits: {
     maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
   device.addEventListener('uncapturederror', e => dbg('ОШИБКА GPU ' + e.error.message));

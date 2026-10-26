@@ -654,7 +654,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         if ((QG > cmin)) {
             var EE1: f32 = select(1.0f, 0.01f, ((opq((opq(QC)) + (opq(QR)))) < 0.0001f));
             var EE2: f32 = 0.09f;
-            var EGS: f32 = opq((opq(EE1)) * (opq(exp(opq((opq(EE2)) * (opq(TAIRC)))))));
+            var EGS: f32 = opq((opq(EE1)) * (opq(exp(0.09f * (opq(TAIRC))))));
             if ((TAIR >= g.t0k)) {
                 EGS = 1.0f;
             }

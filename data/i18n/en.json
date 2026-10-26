@@ -298,6 +298,7 @@
 "без турбулентности": "no turbulence",
 "боковое демпфирование": "lateral damping",
 "больше 2 ГБ: память кусками, шаг медленнее; нужно 8+ ГБ свободной памяти": "over 2 GB: chunked memory, slower steps; needs 8+ GB of free memory",
+"браузер не дал доступ к видеокарте (WebGPU): на Android откройте сайт в Chrome, на компьютере - в Chrome, Edge или Safari": "the browser did not grant access to the GPU (WebGPU): on Android open the site in Chrome, on a computer in Chrome, Edge or Safari",
 "в зондировке {0} уровней (с приземным {1}); нужно не меньше 2 в файле - CM1 отказывает при nsnd <= 2 (base.F:627-634)": "sounding has {0} levels (with surface {1}); the file needs at least 2 - CM1 refuses at nsnd <= 2 (base.F:627-634)",
 "вертикальная сетка не совпадает с grid.nz": "vertical grid does not match grid.nz",
 "вертикальная сетка не того размера": "vertical grid has the wrong size",
