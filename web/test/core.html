@@ -1,0 +1,107 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru">
+<head><meta charset="utf-8"><title>Сверка переноса</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body>
+<script type="module">
+// Сверка JS-переноса ядра с записью эталона:
+// лента шагов 1-2 и диагностики команда в команду, начальные буферы байт
+// в байт, поле арены - по имени. ?s=<пресет> (по умолчанию supercell).
+// Эталон: tape/all/<пресет> (--warm 0 --steps 2).
+const q = new URLSearchParams(location.search);
+const name = q.get('s') || 'supercell';
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+const get = u => fetch(u, { cache: 'no-store' });
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+try {
+  const v = '?v=' + Date.now();
+  const { buildRun } = await import('../core/driver.js' + v);
+  const { ConfigParser, loadSounding } = await import('../core/config.js' + v);
+  const ref = await (await get(`../../tape/all/${name}/tape.json`)).json();
+  const conf = ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
+  const sounding = await loadSounding(name, conf, u => get('../../data/presets/' + u).then(r => r.ok ? r.text() : null));
+  const t0 = performance.now();
+  const run = buildRun(conf, sounding);
+  const s1 = run.encodeStep();
+  // снимок «до» - после кодирования шага 1, как у записывателя
+  const pre = run.ctx.rec.buffers.map(b => b.u8.slice());
+  const s2 = run.encodeStep();
+  out(`сборка и кодирование: ${(performance.now() - t0).toFixed(0)} мс`);
+  const tape = run.tape([s1, s2]);
+  let bad = 0;
+  const say = s => { bad++; if (bad < 60) out(s); };
+  // заголовок
+  for (const k of ['nx', 'ny', 'nz', 'dt', 'fieldStride']) if (tape[k] !== ref[k]) say(`${k}: js ${tape[k]} эталон ${ref[k]}`);
+  for (const k of Object.keys(ref.constants)) if (tape.constants[k] !== ref.constants[k]) say(`constants.${k}: js ${tape.constants[k]} эталон ${ref.constants[k]}`);
+  const fk = new Set([...Object.keys(ref.fields), ...Object.keys(tape.fields)]);
+  for (const k of fk) if (tape.fields[k] !== ref.fields[k]) say(`поле ${k}: js ${tape.fields[k]} эталон ${ref.fields[k]}`);
+  if (tape.buffers.length !== ref.buffers.length) say(`буферов: js ${tape.buffers.length} эталон ${ref.buffers.length}`);
+  for (const b of ref.buffers) {
+    const j = tape.buffers[b.id];
+    if (!j) { say(`нет буфера ${b.id} ${b.label}`); continue; }
+    if (j.length !== b.length || j.label !== b.label || j.arena !== b.arena) say(`буфер ${b.id}: js ${j.label}/${j.length} эталон ${b.label}/${b.length}`);
+  }
+  // команды (барьеры - вне сравнения: проигрыватель их не использует)
+  const strip = l => l.filter(c => c.op !== 'barrier');
+  // лента записана с упорядоченными ключами: сравнение без учёта порядка
+  const canon = c => c === undefined ? 'нет' : JSON.stringify(Object.fromEntries(Object.entries(c).sort(([x], [y]) => x < y ? -1 : 1)));
+  const cmp = (what, a, b) => {
+    a = strip(a); b = strip(b);
+    let pipe = '?';
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if (b[i]?.op === 'pipe') pipe = b[i].name;
+      const x = canon(a[i]), y = canon(b[i]);
+      if (x !== y) { say(`${what}: команда ${i} (ядро ${pipe}): js ${x} | эталон ${y}`); return false; }
+    }
+    return true;
+  };
+  const okD = cmp('диагностика', tape.diag, ref.diag || []);
+  const ok1 = cmp('шаг 1', s1, ref.steps[0]);
+  const ok2 = cmp('шаг 2', s2, ref.steps[1]);
+  out(`команды: диагностика ${okD ? 'да' : 'нет'}, шаг 1 ${ok1 ? 'да' : 'нет'}, шаг 2 ${ok2 ? 'да' : 'нет'} (${strip(s1).length} / ${strip(ref.steps[0]).length})`);
+  // содержимое
+  const arena = ref.buffers.find(b => b.arena);
+  const fieldOf = off => Object.entries(ref.fields).find(([, o]) => o <= off && off < o + ref.fieldStride)?.[0] ?? '?';
+  let bufBad = 0;
+  for (const b of ref.buffers) {
+    const want = new Uint8Array(await (await get(`../../tape/all/${name}/buffers/${b.id}.pre.bin`)).arrayBuffer());
+    const got = pre[b.id];
+    if (!got) continue;
+    const w = new Uint32Array(want.buffer, 0, want.length >> 2), g = new Uint32Array(got.buffer, 0, got.length >> 2);
+    if (b.arena) {
+      const perField = new Map();
+      for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) {
+        const fld = fieldOf(i * 4);
+        const e = perField.get(fld) || { n: 0, first: i };
+        e.n++; perField.set(fld, e);
+      }
+      for (const [fld, e] of perField) {
+        const fw = new Float32Array(want.buffer), fg = new Float32Array(got.buffer);
+        const c = e.first - ref.fields[fld] / 4;
+        say(`арена ${fld}: ${e.n} слов; первое c=${c}: js ${fg[e.first]} эталон ${fw[e.first]}`);
+      }
+      if (perField.size) bufBad++;
+    } else {
+      let n = 0, first = -1;
+      for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { n++; if (first < 0) first = i; }
+      if (n) {
+        bufBad++;
+        const fw = new Float32Array(want.buffer, 0, w.length), fg = new Float32Array(got.buffer, 0, w.length);
+        say(`буфер ${b.id} ${b.label}: ${n} слов; [${first}] js ${fg[first]} (${g[first]}) эталон ${fw[first]} (${w[first]})`);
+      }
+    }
+  }
+  out(`буферов с расхождением: ${bufBad} из ${ref.buffers.length}`);
+  out(bad ? `ИТОГ ${name}: расхождений ${bad}` : `ИТОГ ${name}: совпало всё`);
+} catch (e) { out('ОШИБКА ' + (e?.stack || e)); }
+out('ГОТОВО');
+</script>
+</body>
+</html>

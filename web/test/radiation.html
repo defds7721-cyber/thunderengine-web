@@ -1,0 +1,162 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru">
+<head><meta charset="utf-8"><title>Сверка излучения</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body>
+<script type="module">
+// Сверка JS-переноса RRTMG (web/core/radiation.js) с записью эталона:
+// конфиг build/radtape/rad.json (суперячейка 32x32x40, Моррисон, radopt=2,
+// dtrad=12), лента эталона (--warm 0 --steps 2).
+// Объекты излучения строятся на той же сетке; входы, которые даёт сценарий
+// (th0, pi0), берутся из буферов ленты; p_top - по nlayers из ленты.
+// Сравниваются: участки команд излучения шагов 1-2 (стартовый вызов,
+// rad_apply, вызов в конце шага 2) и содержимое всех буферов, которые они
+// привязывают, кроме арены и sfc (зона TimeStep).
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+const get = u => fetch(u, { cache: 'no-store' });
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+try {
+  const v = '?v=' + Date.now();
+  const R = await import('../core/radiation.js' + v);
+  const { Grid, VerticalGrid } = await import('../core/grid.js' + v);
+  const { GpuContext } = await import('../core/gpu.js' + v);
+  const dir = '../../build/radtape/';
+  const tape = await (await get(dir + 'tape.json')).json();
+  const conf = await (await get(dir + 'rad.json')).json();
+  const pre = async id => new Uint8Array(await (await get(`${dir}buffers/${id}.pre.bin`)).arrayBuffer());
+  const t0 = performance.now();
+  await R.loadRRTMG(n => get('../../data/rrtmg/' + n).then(r => r.arrayBuffer()));
+  const lwT = R.RRTMGLongwaveTables.bundled(), swT = R.RRTMGShortwaveTables.bundled();
+  out(`таблицы: ${(performance.now() - t0).toFixed(0)} мс`);
+
+  const p0 = conf.param0, p1 = conf.param1, p11 = conf.param11;
+  const grid = new Grid({ nx: p0.nx, ny: p0.ny, nz: p0.nz, dx: p1.dx, dy: p1.dy, dz: p1.dz });
+  const vertical = VerticalGrid.uniform(p0.nz, p1.dz);
+  const byLabel = l => tape.buffers.find(b => b.label === l);
+  const asF = u => Array.from(new Float32Array(u.buffer, 0, u.length >> 2));
+  const th0 = asF(await pre(byLabel('rad.th0').id)), pi0 = asF(await pre(byLabel('rad.pi0').id));
+  // nlayers из параметров rrlw_columns ленты -> p_top той же ветви округления
+  const s1 = tape.steps[0], s2 = tape.steps[1];
+  const lwBytes = s1[s1.findIndex(c => c.op === 'pipe' && c.name === 'rrlw_columns') + 1];
+  const nl = new Int32Array(Uint8Array.from(atob(lwBytes.data), c => c.charCodeAt(0)).buffer)[1];
+  const pTop = (nl - p0.nz) * 4 / 0.01;
+  const ctx = new GpuContext();
+  const lw = new R.RRTMGLongwave({ context: ctx, lw: lwT, nk: grid.nz, pTop });
+  const sw = new R.RRTMGShortwave({ context: ctx, sw: swT, common: lw.common, nk: grid.nz });
+  const sun = new R.RadiationSun({ year: p11.year, month: p11.month, day: p11.day, hour: p11.hour, minute: p11.minute,
+    second: p11.second, ctrlat: p11.ctrlat, ctrlon: p11.ctrlon, dtrad: p11.dtrad, testcase: conf.param2.testcase ?? 0 });
+  // lu0 = 16: emiss 0.98, albd Float(8)/100, xland 2
+  const rad = new R.RadiationDriver({ context: ctx, grid, vertical, th0, pi0, lw, sw, sun,
+    co2: R.RRTMGLongwave.co2(sun.year), emiss: 0.98, albd: Math.fround(8.0 / 100.0), xland: 2 });
+  // арена и sfc - чужие: только смещения и тождество
+  const arenaBuf = { label: 'arena', length: byLabel('arena').length };
+  const arena = { buffer: arenaBuf, handle: n => { if (!(n in tape.fields)) throw new Error('нет поля ' + n); return { offset: tape.fields[n] }; } };
+  const sfc = { label: 'sfc', length: byLabel('sfc').length };
+  const dt = p1.dtl;
+  // шаг 1: старт (mtime = 0) + rad_apply; шаг 2: rad_apply + вызов в конце (mtime = 12)
+  const rec = ctx.rec;
+  rec.take();
+  const cb = ctx.makeCommandBuffer();
+  const segs = [];
+  let modelTime = 0;
+  const apply = () => { const e = cb.makeComputeCommandEncoder(); rad.encodeApply(e, arena, 'thten_t', 'th_a', 'qv_a', dt); return rec.take(); };
+  rad.encodeCall(cb, arena, sfc, 0, dt); segs.push(['шаг 1 старт', rec.take()]);
+  segs.push(['шаг 1 rad_apply', apply()]);
+  const myPre = new Map(rec.buffers.map(b => [b, b.u8 ? b.u8.slice() : null]));   // снимок после кодирования шага 1
+  const doRad2 = rad.isRadiationStep(dt, dt);
+  segs.push(['шаг 2 rad_apply', apply()]);
+  modelTime = 2 * dt;
+  if (doRad2) { rad.encodeCall(cb, arena, sfc, modelTime, dt); segs.push(['шаг 2 конец', rec.take()]); }
+  out(`dorad шага 2: ${doRad2}, radtim после: ${rad.radtim}`);
+
+  // участки эталона (без барьеров): от pipe до end энкодера / до dispatch у rad_apply
+  const strip = l => l.filter(c => c.op !== 'barrier');
+  const find = (list, name, nth = 0) => { let k = 0; for (let i = 0; i < list.length; i++) if (list[i].op === 'pipe' && list[i].name === name) { if (k === nth) return i; k++; } return -1; };
+  const S1 = strip(s1), S2 = strip(s2);
+  const refSegs = [];
+  { const a = find(S1, 'rad_prep'), z = find(S1, 'rad_post'); let e = z; while (S1[e].op !== 'end') e++; refSegs.push(S1.slice(a, e + 1)); }
+  { const a = find(S1, 'rad_apply'); let e = a; while (S1[e].op !== 'dispatch') e++; refSegs.push(S1.slice(a, e + 1)); }
+  { const a = find(S2, 'rad_apply'); let e = a; while (S2[e].op !== 'dispatch') e++; refSegs.push(S2.slice(a, e + 1)); }
+  if (doRad2) { const a = find(S2, 'rad_prep'), z = find(S2, 'rad_post'); let e = z; while (S2[e].op !== 'end') e++; refSegs.push(S2.slice(a, e + 1)); }
+
+  // сопоставление буферов по порядку привязок
+  const map = new Map();   // мой id -> id ленты
+  let bad = 0;
+  const say = s => { bad++; if (bad < 50) out(s); };
+  segs.forEach(([what, mine], si) => {
+    const ref = refSegs[si] || [];
+    const m = strip(mine);
+    if (m.length !== ref.length) say(`${what}: команд js ${m.length} эталон ${ref.length}`);
+    for (let i = 0; i < Math.min(m.length, ref.length); i++) {
+      const a = { ...m[i] }, b = { ...ref[i] };
+      if (a.op === 'buf' && b.op === 'buf' && a.buf >= 0) {
+        if (!map.has(a.buf)) map.set(a.buf, b.buf);
+        if (map.get(a.buf) !== b.buf) say(`${what} [${i}]: буфер js#${a.buf} уже сопоставлен с эталон#${map.get(a.buf)}, здесь эталон#${b.buf}`);
+        a.buf = b.buf;
+      }
+      const canon = o => JSON.stringify(o, Object.keys(o).sort());
+      const x = canon(a), y = canon(b);
+      if (x !== y) say(`${what} [${i}]: js ${x}\n      эталон ${y}`);
+    }
+  });
+  out(`команды: участков ${segs.length}, расхождений ${bad}`);
+
+  // содержимое и длины сопоставленных буферов
+  let bufBad = 0, checked = 0;
+  for (const [jid, tid] of map) {
+    const jb = rec.buffers[jid], tb = tape.buffers[tid];
+    if (tb.arena || tb.label === 'sfc') continue;
+    if (jb.length !== tb.length || (jb.label || '') !== tb.label) { bufBad++; say(`буфер эталон#${tid} ${tb.label}: длина/подпись js ${jb.label}/${jb.length} эталон ${tb.label}/${tb.length}`); continue; }
+    const want = await pre(tid), got = myPre.get(jb);
+    checked++;
+    const w = new Uint32Array(want.buffer, 0, want.length >> 2), g = new Uint32Array(got.buffer, 0, got.length >> 2);
+    let n = 0, first = -1;
+    for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { n++; if (first < 0) first = i; }
+    if (n) {
+      bufBad++;
+      const fw = new Float32Array(want.buffer, 0, w.length), fg = new Float32Array(got.buffer, 0, w.length);
+      say(`буфер эталон#${tid} ${tb.label || '(без подписи, ' + tb.length + ' байт)'}: ${n} слов; [${first}] js ${fg[first]} эталон ${fw[first]}`);
+    }
+  }
+  const unmapped = tape.buffers.filter(b => /^(rad\.|rrtmg)/.test(b.label) && ![...map.values()].includes(b.id) && b.label !== 'rad.radtim');
+  for (const b of unmapped) say(`буфер ленты ${b.id} ${b.label} не привязан моими командами`);
+  out(`буферов сверено ${checked}, с расхождением ${bufBad}`);
+  // солнце: 20000 случайных дат/точек/времён против эталонных
+  // ответов RadiationSun (build/radtape/sun.bin)
+  {
+    const v = new Float32Array(await (await get(dir + 'sun.bin')).arrayBuffer());
+    const n = v.length / 15, C = v.subarray(0, 11 * n), O = v.subarray(11 * n);
+    const names = ['julian', 'declin', 'solcon', 'coszen'], miss = [0, 0, 0, 0];
+    let ex = '';
+    for (let i = 0; i < n; i++) {
+      const c = C.subarray(11 * i, 11 * i + 11);
+      const sn = new R.RadiationSun({ year: c[0], month: c[1], day: c[2], hour: c[3], minute: c[4], second: c[5],
+        ctrlat: c[6], ctrlon: c[7], dtrad: c[8] });
+      const x = sn.compute(c[9], c[10]);
+      names.forEach((k, j) => { if (Math.fround(x[k]) !== O[4 * i + j]) { miss[j]++; if (!ex) ex = `${k} случай ${i}: js ${x[k]} эталон ${O[4 * i + j]}`; } });
+    }
+    // остаток coszen, если declin взять из эталона (подмена Math.asin на один вызов)
+    let rest = 0; const asin0 = Math.asin;
+    for (let i = 0; i < n; i++) {
+      const c = C.subarray(11 * i, 11 * i + 11);
+      Math.asin = () => O[4 * i + 1];
+      const x = new R.RadiationSun({ year: c[0], month: c[1], day: c[2], hour: c[3], minute: c[4], second: c[5],
+        ctrlat: c[6], ctrlon: c[7], dtrad: c[8] }).compute(c[9], c[10]);
+      Math.asin = asin0;
+      if (x.coszen !== O[4 * i + 3]) rest++;
+    }
+    out(`солнце: coszen при declin от эталона - расхождений ${rest}`);
+    out(`солнце: ${n} случаев, расхождений julian ${miss[0]}, declin ${miss[1]}, solcon ${miss[2]}, coszen ${miss[3]} ${ex}`);
+  }
+  out(bad ? `ИТОГ: расхождений ${bad}` : 'ИТОГ: совпало всё');
+} catch (e) { out('ОШИБКА ' + (e?.stack || e)); }
+out('ГОТОВО');
+</script>
+</body>
+</html>

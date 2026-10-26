@@ -1,0 +1,2258 @@
+[
+{
+"ru": "(своя)",
+"at": "web/editor.js"
+},
+{
+"ru": "точек по x",
+"at": "web/editor.js"
+},
+{
+"ru": "точек по y",
+"at": "web/editor.js"
+},
+{
+"ru": "уровней по z",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг по x, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг по y, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг по z, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг по времени, с",
+"at": "web/editor.js"
+},
+{
+"ru": "длительность, с",
+"at": "web/editor.js"
+},
+{
+"ru": "вывод, с",
+"at": "web/editor.js"
+},
+{
+"ru": "рельеф",
+"at": "web/editor.js"
+},
+{
+"ru": "режим турбулентности",
+"at": "web/editor.js"
+},
+{
+"ru": "LES-случай",
+"at": "web/editor.js"
+},
+{
+"ru": "переменный шаг",
+"at": "web/editor.js"
+},
+{
+"ru": "влага",
+"at": "web/editor.js"
+},
+{
+"ru": "микрофизика",
+"at": "web/editor.js"
+},
+{
+"ru": "град (1) / крупа (0)",
+"at": "web/editor.js"
+},
+{
+"ru": "автоконверсия",
+"at": "web/editor.js"
+},
+{
+"ru": "Кориолис",
+"at": "web/editor.js"
+},
+{
+"ru": "f, 1/с",
+"at": "web/editor.js"
+},
+{
+"ru": "крупномасштабный градиент",
+"at": "web/editor.js"
+},
+{
+"ru": "граница запад",
+"at": "web/editor.js"
+},
+{
+"ru": "граница восток",
+"at": "web/editor.js"
+},
+{
+"ru": "граница юг",
+"at": "web/editor.js"
+},
+{
+"ru": "граница север",
+"at": "web/editor.js"
+},
+{
+"ru": "нижняя граница",
+"at": "web/editor.js"
+},
+{
+"ru": "верхняя граница",
+"at": "web/editor.js"
+},
+{
+"ru": "зондировка",
+"at": "web/editor.js"
+},
+{
+"ru": "профиль ветра",
+"at": "web/editor.js"
+},
+{
+"ru": "начальное возмущение",
+"at": "web/editor.js"
+},
+{
+"ru": "случайный шум",
+"at": "web/editor.js"
+},
+{
+"ru": "движение области",
+"at": "web/editor.js"
+},
+{
+"ru": "скорость области u, м/с",
+"at": "web/editor.js"
+},
+{
+"ru": "скорость области v, м/с",
+"at": "web/editor.js"
+},
+{
+"ru": "слой Рэлея",
+"at": "web/editor.js"
+},
+{
+"ru": "начало слоя Рэлея, м",
+"at": "web/editor.js"
+},
+{
+"ru": "сила слоя Рэлея, 1/с",
+"at": "web/editor.js"
+},
+{
+"ru": "капель, см⁻³",
+"at": "web/editor.js"
+},
+{
+"ru": "диссипативный нагрев",
+"at": "web/editor.js"
+},
+{
+"ru": "сохранение сухой массы",
+"at": "web/editor.js"
+},
+{
+"ru": "подсеточная модель",
+"at": "web/editor.js"
+},
+{
+"ru": "растяжение по x",
+"at": "web/editor.js"
+},
+{
+"ru": "растяжение по y",
+"at": "web/editor.js"
+},
+{
+"ru": "растяжение по z",
+"at": "web/editor.js"
+},
+{
+"ru": "верх области, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг в центре, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг на краю, м",
+"at": "web/editor.js"
+},
+{
+"ru": "без растяжения, м",
+"at": "web/editor.js"
+},
+{
+"ru": "длина области, м",
+"at": "web/editor.js"
+},
+{
+"ru": "растяжение от, м",
+"at": "web/editor.js"
+},
+{
+"ru": "растяжение до, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг у земли, м",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг наверху, м",
+"at": "web/editor.js"
+},
+{
+"ru": "излучение",
+"at": "web/editor.js"
+},
+{
+"ru": "шаг излучения, с",
+"at": "web/editor.js"
+},
+{
+"ru": "широта",
+"at": "web/editor.js"
+},
+{
+"ru": "долгота",
+"at": "web/editor.js"
+},
+{
+"ru": "год",
+"at": "web/editor.js"
+},
+{
+"ru": "месяц",
+"at": "web/editor.js"
+},
+{
+"ru": "день",
+"at": "web/editor.js"
+},
+{
+"ru": "час",
+"at": "web/editor.js"
+},
+{
+"ru": "минута",
+"at": "web/editor.js"
+},
+{
+"ru": "секунда",
+"at": "web/editor.js"
+},
+{
+"ru": "потоки с поверхности",
+"at": "web/editor.js"
+},
+{
+"ru": "модель поверхности",
+"at": "web/editor.js"
+},
+{
+"ru": "температура поверхности, K",
+"at": "web/editor.js"
+},
+{
+"ru": "тип поверхности",
+"at": "web/editor.js"
+},
+{
+"ru": "шероховатость, м",
+"at": "web/editor.js"
+},
+{
+"ru": "скорость падения, м/с",
+"at": "web/editor.js"
+},
+{
+"ru": "акустика",
+"at": "web/editor.js"
+},
+{
+"ru": "уравнения",
+"at": "web/editor.js"
+},
+{
+"ru": "излучающие границы",
+"at": "web/editor.js"
+},
+{
+"ru": "форма рельефа",
+"at": "web/editor.js"
+},
+{
+"ru": "начало координат",
+"at": "web/editor.js"
+},
+{
+"ru": "осесимметрия",
+"at": "web/editor.js"
+},
+{
+"ru": "боковое демпфирование",
+"at": "web/editor.js"
+},
+{
+"ru": "полоса демпфирования, м",
+"at": "web/editor.js"
+},
+{
+"ru": "без микрофизики",
+"at": "web/editor.js"
+},
+{
+"ru": "Годдард-LFO",
+"at": "web/editor.js"
+},
+{
+"ru": "Моррисон",
+"at": "web/editor.js"
+},
+{
+"ru": "Ротунно-Эмануэль",
+"at": "web/editor.js"
+},
+{
+"ru": "Вейсман-Клемп",
+"at": "web/editor.js"
+},
+{
+"ru": "файл input_sounding",
+"at": "web/editor.js"
+},
+{
+"ru": "файл (3 столбца)",
+"at": "web/editor.js"
+},
+{
+"ru": "без ветра",
+"at": "web/editor.js"
+},
+{
+"ru": "суперячейка WK",
+"at": "web/editor.js"
+},
+{
+"ru": "мультиячейка",
+"at": "web/editor.js"
+},
+{
+"ru": "WK мультиячейка",
+"at": "web/editor.js"
+},
+{
+"ru": "постоянный",
+"at": "web/editor.js"
+},
+{
+"ru": "нет",
+"at": "web/editor.js"
+},
+{
+"ru": "тёплый пузырь",
+"at": "web/editor.js"
+},
+{
+"ru": "холодный бассейн",
+"at": "web/editor.js"
+},
+{
+"ru": "линия пузырей",
+"at": "web/editor.js"
+},
+{
+"ru": "вихрь Ротунно-Эмануэля",
+"at": "web/editor.js"
+},
+{
+"ru": "линейный термик",
+"at": "web/editor.js"
+},
+{
+"ru": "периодическая",
+"at": "web/editor.js"
+},
+{
+"ru": "открытая",
+"at": "web/editor.js"
+},
+{
+"ru": "стенка",
+"at": "web/editor.js"
+},
+{
+"ru": "стенка без скольжения",
+"at": "web/editor.js"
+},
+{
+"ru": "без турбулентности",
+"at": "web/editor.js"
+},
+{
+"ru": "мезомасштаб (PBL)",
+"at": "web/editor.js"
+},
+{
+"ru": "сухо",
+"at": "web/editor.js"
+},
+{
+"ru": "влажно",
+"at": "web/editor.js"
+},
+{
+"ru": "есть",
+"at": "web/editor.js"
+},
+{
+"ru": "к базовому",
+"at": "web/editor.js"
+},
+{
+"ru": "к среднему",
+"at": "web/editor.js"
+},
+{
+"ru": "да",
+"at": "web/editor.js"
+},
+{
+"ru": "скольжение",
+"at": "web/editor.js"
+},
+{
+"ru": "прилипание",
+"at": "web/editor.js"
+},
+{
+"ru": "полускольжение",
+"at": "web/editor.js"
+},
+{
+"ru": "суша (лето)",
+"at": "web/editor.js"
+},
+{
+"ru": "вода",
+"at": "web/editor.js"
+},
+{
+"ru": "Сетка",
+"at": "web/editor.js"
+},
+{
+"ru": "Шаги и время",
+"at": "web/editor.js"
+},
+{
+"ru": "Физика и постановка",
+"at": "web/editor.js"
+},
+{
+"ru": "Параметры схем",
+"at": "web/editor.js"
+},
+{
+"ru": "Растяжение по x",
+"at": "web/editor.js"
+},
+{
+"ru": "Растяжение по y",
+"at": "web/editor.js"
+},
+{
+"ru": "Растяжение по z",
+"at": "web/editor.js"
+},
+{
+"ru": "Пузырь и прочее (var1..var20)",
+"at": "web/editor.js"
+},
+{
+"ru": "Излучение",
+"at": "web/editor.js"
+},
+{
+"ru": "Поверхность",
+"at": "web/editor.js"
+},
+{
+"ru": "Диагностика",
+"at": "web/editor.js"
+},
+{
+"ru": "Осреднение",
+"at": "web/editor.js"
+},
+{
+"ru": "Порт",
+"at": "web/editor.js"
+},
+{
+"ru": "пока нет",
+"at": "web/editor.js"
+},
+{
+"ru": "(не собирается)",
+"at": "web/editor.js"
+},
+{
+"ru": "нет в порте: {0}",
+"at": "web/editor.js"
+},
+{
+"ru": "иначе - {0}",
+"at": "web/editor.js"
+},
+{
+"ru": "не задано",
+"at": "web/editor.js"
+},
+{
+"ru": "{1} - нет в порте",
+"at": "web/editor.js"
+},
+{
+"ru": "поддержано",
+"at": "web/editor.js"
+},
+{
+"ru": "только значения из списка",
+"at": "web/editor.js"
+},
+{
+"ru": "часть значений заменяется",
+"at": "web/editor.js"
+},
+{
+"ru": "нет в порте",
+"at": "web/editor.js"
+},
+{
+"ru": "на счёт не влияет",
+"at": "web/editor.js"
+},
+{
+"ru": "описания в README.namelist нет",
+"at": "web/editor.js"
+},
+{
+"ru": "конфиг не разобран",
+"at": "web/editor.js"
+},
+{
+"ru": "своя (конструктор)",
+"at": "web/editor.js"
+},
+{
+"ru": "свой файл",
+"at": "web/editor.js"
+},
+{
+"ru": "файл пресета",
+"at": "web/editor.js"
+},
+{
+"ru": "аналитическая, isnd={0}",
+"at": "web/editor.js"
+},
+{
+"ru": ": нужен файл зондировки (кнопка «Зондировка»)",
+"at": "web/editor.js"
+},
+{
+"ru": "Область",
+"at": "web/editor.js"
+},
+{
+"ru": "{0}×{1}×{2} км",
+"at": "web/editor.js"
+},
+{
+"ru": "Шаг по x",
+"at": "web/editor.js"
+},
+{
+"ru": "{0} м",
+"at": "web/editor.js"
+},
+{
+"ru": "{0}–{1} м",
+"at": "web/editor.js"
+},
+{
+"ru": "dt, подшагов",
+"at": "web/editor.js"
+},
+{
+"ru": "{0} с, {1}",
+"at": "web/editor.js"
+},
+{
+"ru": "Шагов",
+"at": "web/editor.js"
+},
+{
+"ru": "Память",
+"at": "web/editor.js"
+},
+{
+"ru": "{0} ГБ",
+"at": "web/editor.js"
+},
+{
+"ru": "Прогон",
+"at": "web/editor.js"
+},
+{
+"ru": "≈ {0} мин",
+"at": "web/editor.js"
+},
+{
+"ru": "память {0} ГБ - больше предела браузера (около 4 ГБ): уменьши сетку",
+"at": "web/editor.js"
+},
+{
+"ru": "Внимание",
+"at": "web/editor.js"
+},
+{
+"ru": "больше 2 ГБ: память кусками, шаг медленнее; нужно 8+ ГБ свободной памяти",
+"at": "web/editor.js"
+},
+{
+"ru": "ошибка",
+"at": "web/editor.js"
+},
+{
+"ru": "Сценарий собирается",
+"at": "web/editor.js"
+},
+{
+"ru": "Зондировка: свой файл, {0} уровней",
+"at": "web/editor.js"
+},
+{
+"ru": "Удалить «{0}»?",
+"at": "web/editor.js"
+},
+{
+"ru": "Конфиг не разобран:",
+"at": "web/editor.js"
+},
+{
+"ru": "Зондировка не разобрана:",
+"at": "web/editor.js"
+},
+{
+"ru": "Скопировано",
+"at": "web/editor.js"
+},
+{
+"ru": "Не скопировано",
+"at": "web/editor.js"
+},
+{
+"ru": "Ссылка на пресет",
+"at": "web/editor.js"
+},
+{
+"ru": "Ссылка на пресет не читается:",
+"at": "web/editor.js"
+},
+{
+"ru": "РЕДАКТОР ГОТОВ",
+"at": "web/editor.js"
+},
+{
+"ru": "перевод не загружен",
+"at": "web/i18n.js"
+},
+{
+"ru": "(?<![А-Яа-яЁёA-Za-z])(",
+"at": "web/i18n.js"
+},
+{
+"ru": ")(?![А-Яа-яЁёA-Za-z])",
+"at": "web/i18n.js"
+},
+{
+"ru": "Язык",
+"at": "web/i18n.js"
+},
+{
+"ru": "memsplit: скобка не закрыта",
+"at": "web/memsplit.js"
+},
+{
+"ru": "memsplit: нет конца присваивания",
+"at": "web/memsplit.js"
+},
+{
+"ru": "ссылка не на пресет",
+"at": "web/presets.js"
+},
+{
+"ru": "пресет по ссылке",
+"at": "web/presets.js"
+},
+{
+"ru": "плитки: у ядра нет ожидаемого входа",
+"at": "web/replay.js"
+},
+{
+"ru": "нет места под байты новой структуры шага (BYTES_SPARE)",
+"at": "web/replay.js"
+},
+{
+"ru": "нет ядра",
+"at": "web/replay.js"
+},
+{
+"ru": "участок нитей не помещается в память модели",
+"at": "web/replay.js"
+},
+{
+"ru": "память модели с участком нитей больше 2 ГБ: нужна раскладка кусками с начала",
+"at": "web/replay.js"
+},
+{
+"ru": "#плитки",
+"at": "web/replay.js"
+},
+{
+"ru": "нет WGSL ядра",
+"at": "web/replay.js"
+},
+{
+"ru": "конвейер {0}: {1} {2}",
+"at": "web/replay.js"
+},
+{
+"ru": ") {\n  if (g.x >= ARG[0]) { return; }\n  M[ARG[5] + g.x] = M[ARG[4] + g.x];\n}\n// Хэш участка - та же формула, что при записи эталона.\n@compute @workgroup_size(256)\nfn region_hash(@builtin(global_invocation_id) g: vec3",
+"at": "web/replay.js"
+},
+{
+"ru": "θ у земли",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "влага в ПС",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "г/кг",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "RH у земли",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "RH наверху",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "задерживающий слой",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "его высота",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "м",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "тропопауза",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "θ тропопаузы",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "T тропопаузы",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "давление у земли",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "гПа",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Параметры",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Свои точки",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Ветер",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "форма",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Годограф",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "сдвиг",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "глубина",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Тяни точки на Skew-T: красные - температура, зелёные - точка росы.",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Потяни точку на графике - профиль перейдёт в «свои точки».",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "CIN {0} Дж/кг: начальный пузырь (iinit, обычно +1-2 K) может не пробить слой, тогда гроза не начнётся.",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} м/с",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} км",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "НУК",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "УСК",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "РН",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "км",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "CAPE приземная",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} Дж/кг",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "CIN приземная",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "CAPE слоя 100 гПа",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "CAPE наибольшая",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "НУК / УСК / РН",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Осаждённая вода",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} мм",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "Сдвиг 0-1 / 0-6 км",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} / {1} м/с",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "SRH 0-1 / 0-3 км",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "{0} / {1} м²/с²",
+"at": "web/sounding-ui.js"
+},
+{
+"ru": "штиль",
+"at": "web/thermo.js"
+},
+{
+"ru": "прямой",
+"at": "web/thermo.js"
+},
+{
+"ru": "четверть круга",
+"at": "web/thermo.js"
+},
+{
+"ru": "полукруг",
+"at": "web/thermo.js"
+},
+{
+"ru": "свои точки",
+"at": "web/thermo.js"
+},
+{
+"ru": "шкала времени: {0} снимков по {1} МБ, раз в {2} с",
+"at": "web/view.js"
+},
+{
+"ru": "нет памяти",
+"at": "web/view.js"
+},
+{
+"ru": "вживую",
+"at": "web/view.js"
+},
+{
+"ru": "Отражаемость",
+"at": "web/view.js"
+},
+{
+"ru": "дБZ",
+"at": "web/view.js"
+},
+{
+"ru": "Вертикальная скорость",
+"at": "web/view.js"
+},
+{
+"ru": "м/с",
+"at": "web/view.js"
+},
+{
+"ru": "Вихрь ζ",
+"at": "web/view.js"
+},
+{
+"ru": "10⁻³ 1/с",
+"at": "web/view.js"
+},
+{
+"ru": "Облака",
+"at": "web/view.js"
+},
+{
+"ru": "Радиальная скорость",
+"at": "web/view.js"
+},
+{
+"ru": "(M[off + c(i, j, k)]); }\nfn value(layer: u32, i: u32, j: u32, k: u32) -> f32 {\n  switch (layer) {\n    case 0u: { return f(P[9], i, j, k); }\n    case 1u: { return 0.5 * (f(P[10], i, j, k) + f(P[10], i, j, k + 1u)); }\n    case 2u: { return D[c(i, j, k)] * 1000.0; }\n    case 3u: { return (f(P[11], i, j, k) + f(P[12], i, j, k)) * 1000.0; }\n    case 4u: { return f(P[13], i, j, k); }\n    case 5u: {\n      let u = 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k));\n      let v = 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k));\n      return sqrt(u * u + v * v);\n    }\n    case 7u: { return 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)); }\n    case 8u: { return 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k)); }\n    default: {\n      // радиальная от радара в (P[18], P[19]) м; ветер относительно земли:\n      // область движется со скоростью (umove, vmove) - P[20], P[21]\n      let u = 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)) + bitcast",
+"at": "web/view.js"
+},
+{
+"ru": "(P[19]);\n      let r = sqrt(dx * dx + dy * dy);\n      // радар видит скорость только по эху: ниже 5 дБZ - пусто\n      if (f(P[9], i, j, k)",
+"at": "web/view.js"
+},
+{
+"ru": "= P[8] || k >= nz) { return; }\n    let p = S[s];\n    let i0 = u32(clamp(floor(p.x), 0.0, f32(nx - 1u))); let j0 = u32(clamp(floor(p.y), 0.0, f32(ny - 1u)));\n    let i1 = min(i0 + 1u, nx - 1u); let j1 = min(j0 + 1u, ny - 1u);\n    let tx = clamp(p.x - f32(i0), 0.0, 1.0); let ty = clamp(p.y - f32(j0), 0.0, 1.0);\n    let a = mix(value(layer, i0, j0, k), value(layer, i1, j0, k), tx);\n    let b = mix(value(layer, i0, j1, k), value(layer, i1, j1, k), tx);\n    O[nx * ny + k * P[8] + s] = mix(a, b, ty);\n    // ветер в плоскости разреза: вдоль линии (направление P[22], P[23]) и w\n    let ua = mix(value(7u, i0, j0, k), value(7u, i1, j0, k), tx);\n    let ub = mix(value(7u, i0, j1, k), value(7u, i1, j1, k), tx);\n    let va = mix(value(8u, i0, j0, k), value(8u, i1, j0, k), tx);\n    let vb = mix(value(8u, i0, j1, k), value(8u, i1, j1, k), tx);\n    let wa = mix(value(1u, i0, j0, k), value(1u, i1, j0, k), tx);\n    let wb = mix(value(1u, i0, j1, k), value(1u, i1, j1, k), tx);\n    let o = nx * ny + nz * P[8] + 2u * nx * ny + 2u * (k * P[8] + s);\n    O[o] = mix(ua, ub, ty) * bitcast",
+"at": "web/view.js"
+},
+{
+"ru": "WebGPU недоступен в этом браузере",
+"at": "web/view.js"
+},
+{
+"ru": "загрузка",
+"at": "web/view.js"
+},
+{
+"ru": "сборка сценария",
+"at": "web/view.js"
+},
+{
+"ru": "свой пресет",
+"at": "web/view.js"
+},
+{
+"ru": "нестандартные термодинамические константы вне testcase 4/5 в браузере не идут",
+"at": "web/view.js"
+},
+{
+"ru": "нет набора ядер для сочетания",
+"at": "web/view.js"
+},
+{
+"ru": "ОШИБКА GPU",
+"at": "web/view.js"
+},
+{
+"ru": "видеокарта отключила страницу:",
+"at": "web/view.js"
+},
+{
+"ru": "сборка ядер",
+"at": "web/view.js"
+},
+{
+"ru": "загрузка состояния",
+"at": "web/view.js"
+},
+{
+"ru": "ошибка кадра:",
+"at": "web/view.js"
+},
+{
+"ru": "мс/шаг",
+"at": "web/view.js"
+},
+{
+"ru": "Время модели",
+"at": "web/view.js"
+},
+{
+"ru": "{0} из {1}",
+"at": "web/view.js"
+},
+{
+"ru": "Шаг по z",
+"at": "web/view.js"
+},
+{
+"ru": "{0} с, переменный",
+"at": "web/view.js"
+},
+{
+"ru": "{0} с",
+"at": "web/view.js"
+},
+{
+"ru": "Сверка с эталоном",
+"at": "web/view.js"
+},
+{
+"ru": "(не идёт в браузере)",
+"at": "web/view.js"
+},
+{
+"ru": "Свой пресет…",
+"at": "web/view.js"
+},
+{
+"ru": "Высота стрелок",
+"at": "web/view.js"
+},
+{
+"ru": "Высота среза",
+"at": "web/view.js"
+},
+{
+"ru": "{0} г/кг",
+"at": "web/view.js"
+},
+{
+"ru": "{0} 1/с",
+"at": "web/view.js"
+},
+{
+"ru": "ошибка:",
+"at": "web/view.js"
+},
+{
+"ru": "СВЕРКА",
+"at": "web/view.js"
+},
+{
+"ru": "шаг 1 побитово, {0} буферов",
+"at": "web/view.js"
+},
+{
+"ru": "разошлось буферов: {0}",
+"at": "web/view.js"
+},
+{
+"ru": ">0 дБZ",
+"at": "web/volume.js"
+},
+{
+"ru": "20 дБZ",
+"at": "web/volume.js"
+},
+{
+"ru": "40 дБZ",
+"at": "web/volume.js"
+},
+{
+"ru": "55 дБZ",
+"at": "web/volume.js"
+},
+{
+"ru": "Облако 0.1 г/кг",
+"at": "web/volume.js"
+},
+{
+"ru": "Дождь 1 г/кг",
+"at": "web/volume.js"
+},
+{
+"ru": "Дождь 3 г/кг",
+"at": "web/volume.js"
+},
+{
+"ru": "Град 1 г/кг",
+"at": "web/volume.js"
+},
+{
+"ru": "Град 4 г/кг",
+"at": "web/volume.js"
+},
+{
+"ru": "↑ 10 м/с",
+"at": "web/volume.js"
+},
+{
+"ru": "↑ 25 м/с",
+"at": "web/volume.js"
+},
+{
+"ru": "↓ 5 м/с",
+"at": "web/volume.js"
+},
+{
+"ru": "ζ 10·10⁻³ 1/с",
+"at": "web/volume.js"
+},
+{
+"ru": "ζ 30·10⁻³ 1/с",
+"at": "web/volume.js"
+},
+{
+"ru": "Торнадо ζ",
+"at": "web/volume.js"
+},
+{
+"ru": "// src: 0 - поле арены M, 1 - производное поле D (та же раскладка);\n// координаты узлов (м) - из буфера X: центры по x с ox, по y с oy, высоты с oz\nstruct P { nx: i32, ny: i32, nz: i32, sJ: i32, sK: i32, f1: u32, f2: u32, combine: u32,\n           iso: f32, sign: f32, src: u32, ox: u32, oy: u32, oz: u32, cap: u32, pad: u32 }\n@group(0) @binding(0) var",
+"at": "web/volume.js"
+},
+{
+"ru": "}\n@vertex fn box_v(@builtin(vertex_index) vid: u32) -> BoxOut {\n  // 12 рёбер коробки области\n  var e = array",
+"at": "web/volume.js"
+},
+{
+"ru": "isnd=9: уровень выше zl1 = 40 км - ветвь ns2 не портирована",
+"at": "web/core/base.js"
+},
+{
+"ru": "первый уровень zh={0} выше нижнего слоя zl1={1}: base.F читает pi0(0)",
+"at": "web/core/base.js"
+},
+{
+"ru": "уровень zh={0} выше последнего узла профиля {1} м",
+"at": "web/core/base.js"
+},
+{
+"ru": "isnd=15: testcase обязан быть 4 или 5 (base.F:1545)",
+"at": "web/core/base.js"
+},
+{
+"ru": "isnd=15: итерация θ не сошлась за 100 шагов (base.F:1637 - stop 1111)",
+"at": "web/core/base.js"
+},
+{
+"ru": "ветер",
+"at": "web/core/base.js"
+},
+{
+"ru": "вихрь: радиус {0} вне опорной сетки",
+"at": "web/core/base.js"
+},
+{
+"ru": "вихрь: r = {0} ближе к центру, чем первый опорный узел",
+"at": "web/core/base.js"
+},
+{
+"ru": "файл зондировки пуст",
+"at": "web/core/base.js"
+},
+{
+"ru": "шапка зондировки не разобрана: ожидались три числа (p_sfc мб, th_sfc K, qv_sfc г/кг), прочитано «{0}»",
+"at": "web/core/base.js"
+},
+{
+"ru": "строка {0} зондировки не разобрана: ожидались z, theta, qv, u, v, прочитано «{1}»",
+"at": "web/core/base.js"
+},
+{
+"ru": "в зондировке {0} уровней (с приземным {1}); нужно не меньше 2 в файле - CM1 отказывает при nsnd <= 2 (base.F:627-634)",
+"at": "web/core/base.js"
+},
+{
+"ru": "высоты в зондировке не возрастают: уровень {0} равен {1} м при предыдущем {2} м. CM1 монотонность не проверяет и на таком файле молча даёт мусор (base.F:744)",
+"at": "web/core/base.js"
+},
+{
+"ru": "высоты в зондировке не возрастают: уровень 1 равен {0} м при предыдущем 0 м",
+"at": "web/core/base.js"
+},
+{
+"ru": "зондировка достаёт до {0} м, верхний скалярный уровень сетки {1} м, не хватает {2} м (base.F:734-739)",
+"at": "web/core/base.js"
+},
+{
+"ru": "JSON: {0} (позиция {1})",
+"at": "web/core/config.js"
+},
+{
+"ru": "ключ не строка",
+"at": "web/core/config.js"
+},
+{
+"ru": "нет :",
+"at": "web/core/config.js"
+},
+{
+"ru": "нет , или }",
+"at": "web/core/config.js"
+},
+{
+"ru": "нет , или ]",
+"at": "web/core/config.js"
+},
+{
+"ru": "строка",
+"at": "web/core/config.js"
+},
+{
+"ru": "неизвестное значение",
+"at": "web/core/config.js"
+},
+{
+"ru": "лишние символы",
+"at": "web/core/config.js"
+},
+{
+"ru": "жёсткая стенка со скольжением ({0})",
+"at": "web/core/config.js"
+},
+{
+"ru": "жёсткая стенка без скольжения ({0})",
+"at": "web/core/config.js"
+},
+{
+"ru": "периодическая по {0}",
+"at": "web/core/config.js"
+},
+{
+"ru": "западная",
+"at": "web/core/config.js"
+},
+{
+"ru": "восточная",
+"at": "web/core/config.js"
+},
+{
+"ru": "южная",
+"at": "web/core/config.js"
+},
+{
+"ru": "северная",
+"at": "web/core/config.js"
+},
+{
+"ru": "выбор выводимых полей",
+"at": "web/core/config.js"
+},
+{
+"ru": "статистический вывод",
+"at": "web/core/config.js"
+},
+{
+"ru": "вывод траекторий частиц",
+"at": "web/core/config.js"
+},
+{
+"ru": "микрофизику NSSL",
+"at": "web/core/config.js"
+},
+{
+"ru": "{0} = {1}: нет в порте - {2} ({3})",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0}: нет в порте - {1}",
+"at": "web/core/config.js"
+},
+{
+"ru": "{0}: просили {1}, поставлено {2} ({3})",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0}: {1}",
+"at": "web/core/config.js"
+},
+{
+"ru": "заменено",
+"at": "web/core/config.js"
+},
+{
+"ru": "{0}: просили {1} - поставлено {2} ({3})",
+"at": "web/core/config.js"
+},
+{
+"ru": "известные расхождения и обходы",
+"at": "web/core/config.js"
+},
+{
+"ru": "шаг по времени dt={0} с требует {1} акустических подшагов при пределе {2}; нужен меньший dt",
+"at": "web/core/config.js"
+},
+{
+"ru": "input_grid_z: не число - «{0}»",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция корень не является объектом JSON",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0} не описана в README.namelist эталона и потому не заводится: поле без ссылки на источник завести нельзя",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0} не является объектом JSON",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0}: поле {1} не заведено. Поле без ссылки на README.namelist не заводится (SCHEMA.md)",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0}, поле {1}: значение не число и не логическое",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0} не заведена и не числится непортированной",
+"at": "web/core/config.js"
+},
+{
+"ru": "поле {0} = {1}: поддерживается только {2}",
+"at": "web/core/config.js"
+},
+{
+"ru": "- иное значение означает другую схему, и считать её мы будем неправильно ({0})",
+"at": "web/core/config.js"
+},
+{
+"ru": "поле {0} = {1}: поддерживается только",
+"at": "web/core/config.js"
+},
+{
+"ru": "секция {0}: обязательное поле {1} отсутствует",
+"at": "web/core/config.js"
+},
+{
+"ru": "строка {0}: не разобрана: {1}",
+"at": "web/core/config.js"
+},
+{
+"ru": "это не namelist CM1: нет ни одной секции &param",
+"at": "web/core/config.js"
+},
+{
+"ru": "поле {0}: значение «{1}» не число и не логическое",
+"at": "web/core/config.js"
+},
+{
+"ru": "stretch_z = 3: нужен файл input_grid_z рядом с namelist (Configuration.gridLevels); без него CM1 останавливается (param.F:9011)",
+"at": "web/core/config.js"
+},
+{
+"ru": "stretch_z = 3: в input_grid_z {0} уровней при nz = {1}, или грани не возрастают (param.F:7653-7659)",
+"at": "web/core/config.js"
+},
+{
+"ru": "stretch_z = 1: nz, ztop, str_bot, str_top, dz_bot, dz_top несовместимы (CM1 остановилась бы, param.F:7463-7510)",
+"at": "web/core/config.js"
+},
+{
+"ru": "iwnd = {0} не портирован; есть 0 (штиль), 1 (RKW88), 2 (Вейсман-Клемп), 3 (мультиячейка CM1), 4 (мультиячейка Вейсмана-Клемпа), 6 (постоянный), 8 (ураганный ПС), 9 (BOMEX), 10 (DYCOMS RF02), 11 (RICO)",
+"at": "web/core/config.js"
+},
+{
+"ru": "isnd = {0} - аналитическая зондировка, внешний файл не используется; передавать его значит вводить в заблуждение",
+"at": "web/core/config.js"
+},
+{
+"ru": "isnd = {0} требует внешнего файла зондировки (README.namelist:539), а он не передан",
+"at": "web/core/config.js"
+},
+{
+"ru": "isnd = 1 (сухая адиабатическая, README.namelist:539) не портирован. Портированы 5 (аналитическая Вейсмана-Клемпа), 7/17 (внешний файл) и LES-случаи 8, 14, 18, 19, 20, 22. Сценарий построить нечем",
+"at": "web/core/config.js"
+},
+{
+"ru": "isnd = {0} не портирован; поддерживаются 5 (Вейсмана-Клемпа), 7 и 17 (внешний файл), 8 (постоянный dθ/dz), 14 (конвективный ПС), 18 (сдвиговый ПС), 19 (BOMEX), 20 (RICO), 22 (устойчивый ПС)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 требует iorigin=1 (param.F:1692)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 требует ny=1 (param.F:1854)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 требует wbc=3 (param.F:1821); ebc=3 - единственная портированная внешняя стенка",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 требует sbc=nbc=1 (param.F:1838)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 несовместим с рельефом (param.F:1803)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 несовместим с cm1setup=1 (param.F:1870)",
+"at": "web/core/config.js"
+},
+{
+"ru": "axisymm=1 требует imove=0 (param.F:1708)",
+"at": "web/core/config.js"
+},
+{
+"ru": "stretch_{0} = {1} не портирован; есть 0, 1, 2",
+"at": "web/core/config.js"
+},
+{
+"ru": "stretch_{0} = {1}, а d{2}_inner/outer, nos_{3}_len, tot_{4}_len не заданы",
+"at": "web/core/config.js"
+},
+{
+"ru": "isfcflx = 1 при bbc = 1: у CM1 потоки считаются только при bbc = 3",
+"at": "web/core/config.js"
+},
+{
+"ru": "bbc = 2 портирован только при cm1setup = 3 и isfcflx = 0",
+"at": "web/core/config.js"
+},
+{
+"ru": "bbc = 3 портирован только с sfcmodel = 1, 3 и 5 (дано {0})",
+"at": "web/core/config.js"
+},
+{
+"ru": "sfcmodel = 3 портирован при isfcflx = 1, cm1setup = 2, ipbl = 1, imoist = 1, isftcflx = iz0tlnd = 0, oceanmodel = 1, season = 1, без set_znt/set_ust/set_flx/pertflx/imove",
+"at": "web/core/config.js"
+},
+{
+"ru": "initsfc = 2 портирован при iorigin = 1 без растяжения по x",
+"at": "web/core/config.js"
+},
+{
+"ru": "lu_index = {0}: LANDUSE.TBL портирован для 3, 16, 18",
+"at": "web/core/config.js"
+},
+{
+"ru": "sfcmodel = 5 требует isfcflx = 1, imoist = 0 и set_znt = 1 с cnst_znt > 0 (param.F:739, 1490, 1507)",
+"at": "web/core/config.js"
+},
+{
+"ru": "bbc = 3 с set_znt = 1 требует cnst_znt > 0",
+"at": "web/core/config.js"
+},
+{
+"ru": "bbc = {0} не портирован; есть 1 (скольжение) и 3 (трение)",
+"at": "web/core/config.js"
+},
+{
+"ru": "пузырь задан через &param8 (var6 > 0) при iorigin = 1: var2 у CM1 - абсолютная координата, а не смещение от центра, и перенести её нечем",
+"at": "web/core/config.js"
+},
+{
+"ru": "iinit = {0} не портирован; есть 1 (тёплый пузырь), 2 (холодный бассейн), 3 (линия пузырей), 7 (вихрь Ротунно–Эмануэля) и 8 (линейный термик со случайными возмущениями)",
+"at": "web/core/config.js"
+},
+{
+"ru": "tconfig = {0} при sgsmodel = 1 не портирован (есть 1)",
+"at": "web/core/config.js"
+},
+{
+"ru": "ipbl = 1 (YSU) портирован с bbc = 3, sfcmodel = 3, без horizturb и idiss",
+"at": "web/core/config.js"
+},
+{
+"ru": "terrain_flag с itern = {0}: портирован только колокол (itern = 1)",
+"at": "web/core/config.js"
+},
+{
+"ru": "рельеф с isnd = {0} (зондировка из файла) не портирован",
+"at": "web/core/config.js"
+},
+{
+"ru": "testcase {0} с radopt ≥ 1: CM1 останавливается (param.F:2024)",
+"at": "web/core/config.js"
+},
+{
+"ru": "adapt_dt = 1 при cm1setup = {0}, sgsmodel = {1} не портирован: ksmax (calcksquick) собирается только по K схемы TKE (cm1setup=1, sgsmodel=1)",
+"at": "web/core/config.js"
+},
+{
+"ru": "eqtset = 1 портирован только при imoist = 0",
+"at": "web/core/config.js"
+},
+{
+"ru": "doimpl = 0 портирован только при cm1setup = 3 (DNS) или cm1setup = 1, sgsmodel = 1 (LES)",
+"at": "web/core/config.js"
+},
+{
+"ru": "tbc = 2 портирован только при cm1setup = 3",
+"at": "web/core/config.js"
+},
+{
+"ru": "irdamp = 2 с растянутой горизонталью не портирован",
+"at": "web/core/config.js"
+},
+{
+"ru": "hrdamp = 1 без irdamp = 1 не портирован",
+"at": "web/core/config.js"
+},
+{
+"ru": "rterm = 1 без турбулентности или слоя Рэлея не портирован",
+"at": "web/core/config.js"
+},
+{
+"ru": "ptype = 0 при imoist = 1 (только пар) не портирован",
+"at": "web/core/config.js"
+},
+{
+"ru": "radopt = 2 портирован только с ptype = 5 (Моррисон)",
+"at": "web/core/config.js"
+},
+{
+"ru": "radopt = 2: в &param11 нет даты/точки/dtrad - у CM1 умолчаний нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "radopt = 2: нет tsk0 (&param12)",
+"at": "web/core/config.js"
+},
+{
+"ru": "ptype = 6 без v_t в &param3: у CM1 умолчания нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "testcase 10 при imoist = 0: сухое подтягивание θ (solve1.F:1538-1545) не портировано",
+"at": "web/core/config.js"
+},
+{
+"ru": "testcase {0}: крупномасштабный форсинг (LargeScaleForcing) ещё не перенесён в браузер",
+"at": "web/core/config.js"
+},
+{
+"ru": "lspgrad = 2 требует профилей ug/vg, их задаёт только testcase 3/7 (base.F:2724, 2844)",
+"at": "web/core/config.js"
+},
+{
+"ru": "границы wbc={0} ebc={1} sbc={2} nbc={3} заданы вразнобой; по каждой оси обе стенки обязаны быть либо периодическими (1), либо открытыми (2)",
+"at": "web/core/config.js"
+},
+{
+"ru": "dtl=6 при dx=1 км - сверенное отношение суперячейки;",
+"at": "web/core/config.js"
+},
+{
+"ru": "; эталонного прогона CM1 с этой постановкой нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "суперячейка 1 км",
+"at": "web/core/config.js"
+},
+{
+"ru": "классическая суперячейка Вейсмана-Клемпа: раскол, правый шторм, мезоциклон, крюк. Штатный конфиг CM1 (Моррисон); шаг сверен, горизонт сверен только на Годдарде",
+"at": "web/core/config.js"
+},
+{
+"ru": "штатный dtl=6 из namelist CM1; сверка одного шага из состояния эталона на 2580 с сходится по u,v,w до 4e-3 м/с (0.00 шагового приращения), перебор по dt 3..6 доживает до 3000 с с |w|max 54-56 при 53.5 у CM1 (KNOWN_GAPS, 2026-09-18). До 2026-09-18 стоял обход dt=3. Всё это - на Годдарде; на Моррисоне (с 2026-09-24) сверен один шаг, перебор по dt не повторялся",
+"at": "web/core/config.js"
+},
+{
+"ru": "шкваловая линия",
+"at": "web/core/config.js"
+},
+{
+"ru": "линия ячеек при слабом сдвиге (Bryan et al. 2003): холодный бассейн, новые ячейки на переднем крае, 300 км области",
+"at": "web/core/config.js"
+},
+{
+"ru": "штатный dtl=6 из config_files/squall_line (Bryan et al. 2003, слабый сдвиг RKW88, линейный термик). Отличие от примера CM1: микрофизика Моррисона (ptype=5), как в примере CM1 (с 2026-09-24; до того - Годдард). До горизонта на этой конфигурации не сверялось",
+"at": "web/core/config.js"
+},
+{
+"ru": "сухой 2D-пузырь",
+"at": "web/core/config.js"
+},
+{
+"ru": "тест динамики без влаги",
+"at": "web/core/config.js"
+},
+{
+"ru": "конфигурация сверки dry2d_match: 300 шагов, расхождение theta\\' 0.0069 K и w 0.159 м/с. При dx=100 выходит dtsm=0.167 с, и dt=3 потребовал бы nsound=18 вместо 6 - другое расписание подшагов и другой результат",
+"at": "web/core/config.js"
+},
+{
+"ru": "isnd=1 (сухая адиабатическая) не портирован, и сценария сухого пузыря в ядре нет - он собирается в приложении вручную. Конфигурация разбирается и проверяется, сценарий пока не строится",
+"at": "web/core/config.js"
+},
+{
+"ru": "суперячейка 500 м в центре",
+"at": "web/core/config.js"
+},
+{
+"ru": "та же суперячейка на растянутой сетке: 500 м в центральных 40 км, мезоциклон разрешается",
+"at": "web/core/config.js"
+},
+{
+"ru": "растянутая сетка CM1 (stretch_x=stretch_y=1, README.stretch): 500 м в центральных 40 км, до 2 км у краёв, область та же 120 км; dtl=3 под 500 м. Сверка одного шага из состояния эталона на растянутой сетке (2580 с): w, u, v 0.00, th 0.00, qv 0.01, qc 0.00, tke 0.01 шагового приращения (KNOWN_GAPS, 2026-09-18). До горизонта не сверялось",
+"at": "web/core/config.js"
+},
+{
+"ru": "торнадо-сетка 100 м",
+"at": "web/core/config.js"
+},
+{
+"ru": "100 м в центральных 20 км, 50 м у земли, трение о землю - постановка для торнадо; долго и без гарантии",
+"at": "web/core/config.js"
+},
+{
+"ru": "dtl=0.6: по dtsmall CM1 при min_dx=100 м dtsm=0.167 с → nsound=4 (dts=0.15); CFL адвекции при |u| до 70 м/с и dx=100 м - 0.42, при |w| до 60 м/с и dz=50 м - 0.72. Растяжение сверено на stx_2580, трение на sfc_2580 (оба 0.00 шагового приращения), их сочетание на 100 м против CM1 не гонялось",
+"at": "web/core/config.js"
+},
+{
+"ru": "одиночная ячейка",
+"at": "web/core/config.js"
+},
+{
+"ru": "та же среда, сдвиг 5 м/с: одна ячейка, пик 45 м/с на 25-й минуте, к часу слабеет, после часа - россыпь мелких ячеек по краю холодного бассейна (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "dtl=6 при dx=1 км - сверенное отношение суперячейки; среда - термодинамика Вейсмана-Клемпа с прямым сдвигом 5 м/с на 6 км (SoundingFactory), эталонного прогона CM1 с ней нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "сдвиг 15 м/с, прямой годограф: одна ячейка час, потом кластер из 3-6 ячеек с потоками 40-50 м/с, новые - на заднем фланге (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "dtl=6 при dx=1 км; термодинамика Вейсмана-Клемпа с прямым сдвигом 15 м/с на 6 км, эталонного прогона CM1 нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "суперячейка, прямой сдвиг",
+"at": "web/core/config.js"
+},
+{
+"ru": "сдвиг 30 м/с без кривизны годографа: раскол на 45-й минуте, зеркальная пара расходится на 50 км за час, между ними - новые ячейки (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "dtl=6 при dx=1 км; термодинамика Вейсмана-Клемпа с прямым сдвигом 30 м/с на 6 км, эталонного прогона CM1 нет",
+"at": "web/core/config.js"
+},
+{
+"ru": "гроза без ветра",
+"at": "web/core/config.js"
+},
+{
+"ru": "ветра нет (iwnd=0): одна ячейка стоит на месте, пик на 30-й минуте (|w| 39 м/с, 72 dBZ), к часу распадается, потом кольцо новых ячеек по краю холодного бассейна. Картина строго симметрична - без ветра нарушить симметрию нечем (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "штиль iwnd=0 (base.F:2208)",
+"at": "web/core/config.js"
+},
+{
+"ru": "сдвиг Вейсмана-Клемпа 1982",
+"at": "web/core/config.js"
+},
+{
+"ru": "профиль CM1 iwnd=4 (у CM1 назван «мультиячейка»), u = 35·th(z/3 км): сдвиг 0-6 км 33 м/с, поэтому НЕ мультиячейка, а раскол на зеркальную пару с 50-й минуты, ядра 31-36 м/с, к 2 ч разошлись на ±26 км (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "шквал от холодного бассейна",
+"at": "web/core/config.js"
+},
+{
+"ru": "запуск «обрушением плотины» (холод −6 K на 2.5 км): линия по всему фронту к 20-й минуте, |w| 24-36 м/с, с 100-й минуты рвётся на 9-16 ячеек, позади - полоса слабого эха до 125 км (прогон 3 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "iinit=2 (init3d.F:553), остальное - как шкваловая линия",
+"at": "web/core/config.js"
+},
+{
+"ru": "МКС",
+"at": "web/core/config.js"
+},
+{
+"ru": "линейный термик при сдвиге 20 м/с на 0-5 км: система живёт все 4 часа, 3-7 ядер вдоль линии, |w| 30-53 м/с, эхо >40 dBZ 550-800 км², шлейф эха тянется по сдвигу на 100+ км (прогон 4 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "линейный термик, прямой сдвиг 20 м/с на 5 км",
+"at": "web/core/config.js"
+},
+{
+"ru": "линия ячеек при сильном сдвиге",
+"at": "web/core/config.js"
+},
+{
+"ru": "три пузыря CM1 (iinit=3), сдвиг у земли 25 м/с на 0-2.5 км, CAPE 3100: мощные ячейки (|w| 44-60 м/с, 77 dBZ), к часу линия смыкается, край рваный. Эхо-дугу на сетке 1 км получить НЕ удалось (прогон 3 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "iinit=3 (init3d.F:585), qv_pbl 16 г/кг, сдвиг 25 м/с на 2.5 км",
+"at": "web/core/config.js"
+},
+{
+"ru": "деречо-среда",
+"at": "web/core/config.js"
+},
+{
+"ru": "холодный бассейн при сдвиге у земли 20 м/с и CAPE 3100: линия не распадается все 3 часа, |w| до 55 м/с, идёт около 65 км/ч, эхо на 130 км. Среда деречо; сама буря деречо - сотни км и 6+ часов - в эту область не влезает (прогон 3 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "iinit=2, qv_pbl 16 г/кг, сдвиг 20 м/с на 2.5 км",
+"at": "web/core/config.js"
+},
+{
+"ru": "суперячейка, высокий CAPE",
+"at": "web/core/config.js"
+},
+{
+"ru": "годограф Вейсмана-Клемпа, qv 16 г/кг (CAPE 3100 против 1960): |w| до 73 м/с, раскол на 50-й минуте, к 2 ч эхо >40 dBZ на 2000 км², наковальня выходит за край области (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "qv_pbl 16 г/кг, годограф iwnd=2",
+"at": "web/core/config.js"
+},
+{
+"ru": "низкий CAPE, сильный сдвиг",
+"at": "web/core/config.js"
+},
+{
+"ru": "qv 12 г/кг (CAPE 980), сдвиг 0-6 км 47 м/с: медленный разгон - эхо лишь к 40-й минуте, ядра 13 м/с; к 2 ч |w| 45 м/с и раскол; правый шторм стоит в западной трети области (прогон 2 ч)",
+"at": "web/core/config.js"
+},
+{
+"ru": "qv_pbl 12 г/кг, годограф iwnd=2 ×1.5",
+"at": "web/core/config.js"
+},
+{
+"ru": "ураган",
+"at": "web/core/config.js"
+},
+{
+"ru": "штатный hurricane_3d CM1: вихрь Ротунно–Эмануэля над океаном 28 °C, f-плоскость, 384×384 (4 км в центре, до 16 км к краям), 59 уровней; тяжёлый - арена около 4 ГБ, 8 суток модели",
+"at": "web/core/config.js"
+},
+{
+"ru": "штатный dtl=10 из config_files/hurricane_3d. Сверен один шаг из состояния эталона (w 0.01, θ 0.00 шагового приращения) и вихрь при t=0 (u, v, π′ до 2e-7); до горизонта не сверялось",
+"at": "web/core/config.js"
+},
+{
+"ru": "суперячейка 500 м, равномерно",
+"at": "web/core/config.js"
+},
+{
+"ru": "200x200x64 на 500 м по всей области 100 км - тяжёлая, для планшета с запасом памяти",
+"at": "web/core/config.js"
+},
+{
+"ru": "штатное отношение dtl/dx = 6 с / 1000 м, перенесённое на dx=500 м; до горизонта на этой сетке не сверялось",
+"at": "web/core/config.js"
+},
+{
+"ru": "{0}, dx={1} м, dz={2} м, dt={3} с, подшагов {4}",
+"at": "web/core/config.js"
+},
+{
+"ru": "fill не перенесён: нет в записывателе",
+"at": "web/core/gpu.js"
+},
+{
+"ru": "растяжение сетки: задано {0} точек, а параметры требуют {1}",
+"at": "web/core/grid.js"
+},
+{
+"ru": "(зоны {0}+{1}+{2}); CM1 на этом останавливается (param.F:6805)",
+"at": "web/core/grid.js"
+},
+{
+"ru": "размеры сетки должны быть положительными",
+"at": "web/core/grid.js"
+},
+{
+"ru": "нужно минимум две ячейки",
+"at": "web/core/grid.js"
+},
+{
+"ru": "высоты граней должны строго возрастать",
+"at": "web/core/grid.js"
+},
+{
+"ru": "поле {0} не выделено в арене; есть: {1}",
+"at": "web/core/grid.js"
+},
+{
+"ru": "схема Моррисона: nz {0} > {1} (MORR_MAXK)",
+"at": "web/core/micro.js"
+},
+{
+"ru": "morr_column: 13 полей",
+"at": "web/core/micro.js"
+},
+{
+"ru": "ds/dg ≠ 3: morr_cbrt_cr не годится",
+"at": "web/core/micro.js"
+},
+{
+"ru": "ptype 6 требует контекст без льда: GpuContext(warmOnly: true)",
+"at": "web/core/micro.js"
+},
+{
+"ru": "RRTMG: expf_tables.bin не той длины",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "нет ресурса RRTMG: {0} (сначала loadRRTMG)",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: в литеральных таблицах нет ngc/ngn/ngm/wt/ng",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: в RRTMG_LW_DATA {0} записей вместо 16",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: полоса {0}: в записи {1} чисел, по раскладке READ {2}",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: нет оси g",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: испорчена запись RRTMG_LW_DATA на байте {0}",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: не e1state",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: разобрано {0} из {1} байт",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: в литеральных таблицах SW нет ngc/ngn/ngm/wt/ng",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: в RRTMG_SW_DATA {0} записей вместо 14",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "p_top < 2 гПа: слоёв над верхом нет (12324) — не проверено",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: таблица {0}: нет или не того размера ({1})",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: общая таблица у {0}: {1} вместо {2}",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG: таблица SW {0}: нет или не того размера ({1})",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "RRTMG собран на другое nk",
+"at": "web/core/radiation.js"
+},
+{
+"ru": "lu0 = {0}: LANDUSE.TBL портирован для 3 и 16",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "вертикальная сетка не того размера",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "timestep.js не подключён: состав арены считает TimeStep.Fields",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "timestep.js не подключён",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "константы контекста не совпадают со сценарием",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "флаг рельефа контекста не совпадает со сценарием",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "флаг схемы без льда контекста не совпадает со сценарием",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "две схемы микрофизики сразу: ptype 6 и 5",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "флаг осесимметрии контекста / сетки не совпадает со сценарием",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "radopt = 2 только с Моррисоном (param.F:2109)",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "sfcmodel = 3 + YSU требует useTKE и влагу",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "возмущение",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "рельеф без columnBase: базовое состояние по столбцам не задано",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "testcase {0} (возмущения u, v) не портирован",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "testcase {0} не портирован",
+"at": "web/core/scenario.js"
+},
+{
+"ru": "рельеф: nz плоской сетки не совпадает",
+"at": "web/core/terrain.js"
+},
+{
+"ru": "zsgrad: порядок адвекции {0} не портирован (flx8/flx10)",
+"at": "web/core/terrain.js"
+},
+{
+"ru": "вертикальная сетка не совпадает с grid.nz",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "профили rho0 и rr0 должны иметь nz значений",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "профиль rf0 должен иметь nz+1 значений",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "поверхность не по числу столбцов",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "lu_index {0} не портирован (3, 16, 18)",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "плоскость не по числу столбцов",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "профили форсинга не по сетке",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "testcase 6/10: нужны dvdr и v0 по nz",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "tqnudge портирован для влажного набора без рельефа",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "tqnudge кладёт в thten1 — нужно поле тенденций шага thten_t",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "lspgrad и Fields.useLargeScalePG расходятся",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "lspgrad = {0} не портирован (есть 1, 2, 3)",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "lspgrad={0} требует профили u0, v0 по nz значений",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "irdamp=2 портирован без растяжения по горизонтали и без рельефа (param.F:1559)",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "lspgrad=2 без профилей ug/vg (testcase)",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "sfcmodel = 3: без рельефа и горизонтального растяжения",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "sfcmodel=5 только для сухого прогона (sfcphys.F:905 — stop 11211)",
+"at": "web/core/timestep.js"
+},
+{
+"ru": "ThunderEngine - пресеты",
+"at": "web/editor.html"
+},
+{
+"ru": "Гроза",
+"at": "web/editor.html"
+},
+{
+"ru": "Пресеты",
+"at": "web/editor.html"
+},
+{
+"ru": "Доска почёта",
+"at": "web/editor.html"
+},
+{
+"ru": "Пресет",
+"at": "web/editor.html"
+},
+{
+"ru": "Новый на основе",
+"at": "web/editor.html"
+},
+{
+"ru": "Импорт конфига",
+"at": "web/editor.html"
+},
+{
+"ru": "Зондировка",
+"at": "web/editor.html"
+},
+{
+"ru": "Экспорт",
+"at": "web/editor.html"
+},
+{
+"ru": "Ссылка",
+"at": "web/editor.html"
+},
+{
+"ru": "Удалить",
+"at": "web/editor.html"
+},
+{
+"ru": "Запустить",
+"at": "web/editor.html"
+},
+{
+"ru": "Из файла",
+"at": "web/editor.html"
+},
+{
+"ru": "Вернуть исходную",
+"at": "web/editor.html"
+},
+{
+"ru": "Название",
+"at": "web/editor.html"
+},
+{
+"ru": "Описание поля",
+"at": "web/editor.html"
+},
+{
+"ru": "Нажми на поле - здесь появится его описание из README.namelist CM1.",
+"at": "web/editor.html"
+},
+{
+"ru": "Показать поля, не влияющие на счёт",
+"at": "web/editor.html"
+},
+{
+"ru": "Исходный код",
+"at": "web/editor.html"
+},
+{
+"ru": "Сценарий",
+"at": "web/index.html"
+},
+{
+"ru": "Срезы",
+"at": "web/index.html"
+},
+{
+"ru": "Объём",
+"at": "web/index.html"
+},
+{
+"ru": "Слой",
+"at": "web/index.html"
+},
+{
+"ru": "Композит",
+"at": "web/index.html"
+},
+{
+"ru": "Стрелки ветра",
+"at": "web/index.html"
+},
+{
+"ru": "Порог облака",
+"at": "web/index.html"
+},
+{
+"ru": "Порог торнадо",
+"at": "web/index.html"
+},
+{
+"ru": "Растяжение по вертикали",
+"at": "web/index.html"
+},
+{
+"ru": "Сверху",
+"at": "web/index.html"
+},
+{
+"ru": "С земли",
+"at": "web/index.html"
+},
+{
+"ru": "Шкала времени",
+"at": "web/index.html"
+},
+{
+"ru": "Скорость",
+"at": "web/index.html"
+},
+{
+"ru": "Пауза",
+"at": "web/index.html"
+},
+{
+"ru": "Шаг",
+"at": "web/index.html"
+},
+{
+"ru": "Сначала",
+"at": "web/index.html"
+},
+{
+"ru": "Сверить",
+"at": "web/index.html"
+},
+{
+"ru": "Панель",
+"at": "web/index.html"
+},
+{
+"ru": "Сверка шага",
+"at": "web/replay.html"
+},
+{
+"ru": "ThunderEngine - доска почёта",
+"at": "web/shame.html"
+},
+{
+"ru": "Боты, которые нашли в этом репозитории ключ-приманку и попробовали им воспользоваться. Ключ ничего не открывает. Последние 10.",
+"at": "web/shame.html"
+},
+{
+"ru": "зонд isnd=1 не перенесён",
+"at": "data/index.json"
+},
+{
+"ru": "суперячейка на растянутой сетке 100 м в центре: торнадо-масштаб. Тяжёлый - память 3 ГБ, около 1.5 с на шаг; шаг 1 сверен с эталоном побитово",
+"at": "data/index.json"
+},
+{
+"ru": "та же среда, сдвиг 5 м/с: одна ячейка, пик 45 м/с на 25-й минуте, к часу слабеет, после часа — россыпь мелких ячеек по краю холодного бассейна (прогон 2 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "сдвиг 15 м/с, прямой годограф: одна ячейка час, потом кластер из 3-6 ячеек с потоками 40-50 м/с, новые — на заднем фланге (прогон 2 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "сдвиг 30 м/с без кривизны годографа: раскол на 45-й минуте, зеркальная пара расходится на 50 км за час, между ними — новые ячейки (прогон 2 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "ветра нет (iwnd=0): одна ячейка стоит на месте, пик на 30-й минуте (|w| 39 м/с, 72 dBZ), к часу распадается, потом кольцо новых ячеек по краю холодного бассейна. Картина строго симметрична — без ветра нарушить симметрию нечем (прогон 2 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "запуск «обрушением плотины» (холод −6 K на 2.5 км): линия по всему фронту к 20-й минуте, |w| 24-36 м/с, с 100-й минуты рвётся на 9-16 ячеек, позади — полоса слабого эха до 125 км (прогон 3 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "холодный бассейн при сдвиге у земли 20 м/с и CAPE 3100: линия не распадается все 3 часа, |w| до 55 м/с, идёт около 65 км/ч, эхо на 130 км. Среда деречо; сама буря деречо — сотни км и 6+ часов — в эту область не влезает (прогон 3 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "qv 12 г/кг (CAPE 980), сдвиг 0-6 км 47 м/с: медленный разгон — эхо лишь к 40-й минуте, ядра 13 м/с; к 2 ч |w| 45 м/с и раскол; правый шторм стоит в западной трети области (прогон 2 ч)",
+"at": "data/index.json"
+},
+{
+"ru": "штатный hurricane_3d CM1: вихрь над океаном, 384×384×59. Очень тяжёлый - память 4 ГБ, сборка около 40 с, 3 с на шаг; шаг 1 сверен с эталоном побитово",
+"at": "data/index.json"
+},
+{
+"ru": "200x200x64 на 500 м по всей области 100 км — тяжёлая, для планшета с запасом памяти",
+"at": "data/index.json"
+}
+]

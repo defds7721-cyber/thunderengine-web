@@ -1,0 +1,34 @@
+# зависимости и сборка
+node_modules/
+dist/
+build/
+*.log
+
+# дампы прогонов
+*.dat
+dumps/
+
+# окружение
+.env
+# .env в корне - ключ-приманка для ботов (canarytokens), нарочно в репо: доска почёта web/shame.html
+!/.env
+.DS_Store
+
+# служебные файлы ассистента
+CLAUDE.md
+AGENTS.md
+.claude/
+
+# входы и результаты проб
+probe/**/*.bin
+
+# сборка и ленты
+.build/
+tape/
+.wgslcheck
+.webrun
+__pycache__/
+data/*/step1/
+
+# рабочие записи - только локально, в репо не выкладывать
+CONTEXT.md

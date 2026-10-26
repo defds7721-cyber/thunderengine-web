@@ -1,0 +1,66 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Сверка шага 1</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body><script type="module">
+// Шаг 1 пресета, собранного в браузере, против эталона по отпечаткам буферов
+// (step1.fnv.json). Для сеток больше 2 ГБ:
+// память кусками (memsplit.js), чтение буферов частями.
+//   ?s=пресет&ref=step1.fnv.json[&memchunk=N]
+const q = new URLSearchParams(location.search);
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const get = u => fetch(u, { cache: 'no-store' });
+const v = '?v=' + Date.now();
+const C = await import('../core/config.js' + v);
+const { buildRun } = await import('../core/driver.js' + v);
+const { Replayer } = await import('../replay.js' + v);
+const name = q.get('s');
+const conf = C.ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
+const snd = await C.loadSounding(name, conf, f => get('../../data/presets/' + f).then(r => r.ok ? r.text() : null));
+let t0 = performance.now();
+const run = buildRun(conf, snd);
+const first = run.encodeStep();
+for (const b of run.ctx.device.all) run.ctx.rec.id(b);
+const tape = run.tape([first]);
+out(`сборка: ${((performance.now() - t0) / 1000).toFixed(1)} с, буферов ${tape.buffers.length}, арена ${(tape.buffers.find(b => b.arena).length / 2 ** 30).toFixed(2)} ГБ`);
+const c = tape.constants;
+const flags = [c.testcase ? 'tc' + c.testcase : null, c.terrain ? 'terrain' : null, c.axisymmetric ? 'axisymmetric' : null, c.warmOnly ? 'warmOnly' : null].filter(Boolean);
+const kdir = '../../data/kernels' + flags.map(x => '_' + x).join('') + '/';
+const kernels = await (await get(kdir + 'kernels.json')).json();
+const sources = {};
+await Promise.all(Object.keys(kernels).map(async n => { sources[n] = await (await get(kdir + n + '.wgsl')).text(); }));
+const adapter = await navigator.gpu.requestAdapter();
+const device = await adapter.requestDevice({ requiredLimits: { maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize,
+  maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
+device.addEventListener('uncapturederror', e => out('ОШИБКА GPU ' + e.error.message));
+const r = new Replayer(device, tape, kernels, sources);
+r.plan(false);
+await r.build();
+out(`память: ${r.mems.length} кусок(ов), ${(r.memWords * 4 / 2 ** 30).toFixed(2)} ГБ`);
+for (const [i, b] of run.ctx.rec.buffers.entries()) await r.uploadAsync(i, b.u8);
+await device.queue.onSubmittedWorkDone();
+run.releaseArena();
+t0 = performance.now();
+const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+await device.queue.onSubmittedWorkDone();
+out(`шаг 1: ${(performance.now() - t0).toFixed(0)} мс`);
+const want = await (await get(q.get('ref'))).json();
+const fnvStep = (h, w) => { for (let i = 0; i < w.length; i++) h = Math.imul(h ^ w[i], 0x01000193) >>> 0; return h; };
+let bad = 0;
+const ids = Object.keys(want).map(Number);
+for (const b of tape.buffers.filter(b => ids.includes(b.id))) {
+  let h = 0x811c9dc5;
+  const words = b.length / 4, part = 1 << 26;
+  for (let o = 0; o < words; o += part) h = fnvStep(h, await r.read(Math.min(part, words - o), r.base[b.id] + o));
+  if (h !== want[b.id]) { bad++; out(`буфер ${b.id} ${b.label}: не совпал`); }
+}
+out(bad ? `ИТОГ ${name}: разошлось ${bad} из ${ids.length}` : `ИТОГ ${name}: шаг 1 побитово, ${ids.length} буферов`);
+out('ГОТОВО');
+</script></body></html>

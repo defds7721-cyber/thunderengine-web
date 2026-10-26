@@ -1,0 +1,261 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru">
+<head><meta charset="utf-8"><title>Сверка шага</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body>
+<script type="module">
+// Сверка переноса TimeStep (web/core/timestep.js) с лентой эталона.
+// ?s=<пресет> или ?s=all. Профили базового состояния берутся из буферов
+// ленты (их строит F1), сетка - из пресета, флаги шага - как
+// SupercellScenario.build по ScenarioBuilder. Буферы сравниваются по
+// подписи и длине (номера зависят от диагностики, её здесь нет), команды
+// микрофизики в эталоне вырезаются (её кодирует F3), барьеры не сравниваются.
+const q = new URLSearchParams(location.search);
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+const get = u => fetch(u, { cache: 'no-store' });
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const v = '?v=' + Date.now();
+const { TimeStep, AcousticParamsGPU, Fields, LargeScaleForcing } = await import('../core/timestep.js' + v);
+const { Grid, HorizontalGrid, VerticalGrid, Stretch, ThermoConstants } = await import('../core/grid.js' + v);
+const { GpuContext } = await import('../core/gpu.js' + v);
+const { f } = await import('../core/f32.js' + v);
+
+const ALL = ['supercell', 'squall_line', 'supercell_stretched', 'single_cell', 'multicell', 'supercell_straight', 'pulse_storm',
+  'shear_wk82', 'squall_cold_pool', 'mcs', 'bubble_line_shear', 'derecho_env', 'supercell_high_cape', 'hslc', 'target3d',
+  'hurricane_3d', 'tornado_stretched'];
+// ?x=1: эталоны веток вне пресетов (по конфигу), сервер :8994 с CORS
+const EXTRA = ['A_goddard_cor', 'B_sfcflux', 'C_dry_dns', 'E_noturb', 'F_znt', 'G_bomex', 'H_most', 'I_ysu', 'J_axi', 'K_terrain',
+  'L_hurrbl6', 'M_hurrbl10', 'N_dycoms'];
+const extra = q.get('x') === '1';
+const names = q.get('s') === 'all' ? (extra ? EXTRA : ALL) : [q.get('s') || 'supercell'];
+const presetURL = n => extra ? `http://localhost:8994/cfg/${n}.json` : `../../data/presets/${n}.json`;
+const tapeURL = n => extra ? `http://localhost:8994/${n}/` : `../../tape/all/${n}/`;
+
+async function check(name) {
+  const preset = await (await get(presetURL(name))).json();
+  const c = {};
+  for (const s of Object.values(preset)) if (s && typeof s === 'object') Object.assign(c, s);
+  const tape = await (await get(tapeURL(name) + 'tape.json')).json();
+  // профили из буферов ленты по подписи
+  const prof = {}, refBytes = {};
+  for (const bf of tape.buffers) {
+    const r = await get(`${tapeURL(name)}buffers/${bf.id}.pre.bin`);
+    if (!r.ok) continue;
+    const u8 = new Uint8Array(await r.arrayBuffer());
+    if (u8.length !== bf.length) continue;
+    refBytes[bf.id] = u8;
+    if (!bf.arena) prof[bf.label] = Array.from(new Float32Array(u8.buffer, 0, u8.length >> 2));
+  }
+  const haveBuffers = Object.keys(refBytes).length > 0;
+  // сетка
+  const iorigin = c.iorigin ?? 2;
+  const hgrid = (axis, n, dx, lo, hi) => {
+    const s = c['stretch_' + axis] ?? 0;
+    if (!s) return null;
+    return HorizontalGrid.stretched({ n, dx, stretch: s, inner: c[`d${axis}_inner`], outer: c[`d${axis}_outer`],
+      noStretchLength: c[`nos_${axis}_len`], totalLength: c[`tot_${axis}_len`], centred: iorigin === 2,
+      openWest: lo === 2, openEast: hi === 2 });
+  };
+  const axisymm = (c.axisymm ?? 0) === 1;
+  const hx = axisymm ? HorizontalGrid.uniform({ n: c.nx, dx: c.dx, centred: false, axisymmetric: true })
+    : hgrid('x', c.nx, c.dx, c.wbc ?? 1, c.ebc ?? 1);
+  const hy = hgrid('y', c.ny, c.dy, c.sbc ?? 1, c.nbc ?? 1);
+  const grid = new Grid({ nx: c.nx, ny: c.ny, nz: c.nz, dx: c.dx, dy: c.dy, dz: c.dz, hx, hy });
+  let vertical;
+  if ((c.stretch_z ?? 0) === 1) {
+    const fz = VerticalGrid.williamsonChenFaces({ nz: c.nz, ztop: c.ztop, strBot: c.str_bot, strTop: c.str_top, dzBot: c.dz_bot, dzTop: c.dz_top });
+    vertical = new VerticalGrid(fz, c.dz);
+  } else vertical = VerticalGrid.uniform(c.nz, c.dz);
+  const ctx = new GpuContext({ thermo: ThermoConstants.forTestcase(c.testcase ?? 0) });
+  // арена: только смещения (содержимое шагу не нужно)
+  const arenaRef = tape.buffers.find(b => b.arena);
+  const arena = { buffer: { length: arenaRef.length, label: 'arena' }, handles: {}, fieldStride: tape.fieldStride,
+    handle(n) { const h = this.handles[n]; if (!h) throw new Error('нет поля ' + n); return h; } };
+  for (const [n, o] of Object.entries(tape.fields)) arena.handles[n] = { name: n, offset: o };
+  // флаги - как ScenarioBuilder + SupercellScenario.build
+  const nz = c.nz, zeros = new Array(nz).fill(0);
+  const P = n => prof[n] ?? (n === 'rf0' ? new Array(nz + 1).fill(1) : new Array(nz).fill(1));
+  const cm1setup = c.cm1setup ?? 1;
+  const les = cm1setup === 1 && (c.sgsmodel ?? 0) === 1;
+  const ipbl = c.ipbl ?? 0, horizturb = c.horizturb ?? 0;
+  const meso = cm1setup === 2 && (ipbl === 2 || horizturb === 1);
+  const ysu = cm1setup === 2 && ipbl === 1;
+  const dnsOn = cm1setup === 3;
+  const useTKE = les || meso || dnsOn || ysu;
+  const terrainOn = c.terrain_flag === true;
+  const moving = (c.imove ?? 0) === 1;
+  const umove = moving ? (c.umove ?? 0) : 0, vmove = moving ? (c.vmove ?? 0) : 0;
+  const moist = (c.imoist ?? 1) !== 0;
+  const ptype = c.ptype ?? 2;
+  const icor = (c.icor ?? 0) === 1, lspgrad = c.lspgrad ?? 0;
+  const largeScalePG = icor && [1, 2, 3].includes(lspgrad);
+  let fields;
+  if (moist) fields = useTKE ? Fields.moistWithTKE : Fields.moistGoddardLFO;
+  else { fields = Fields.dry; if (useTKE) { fields.useTKE = true; fields.useRayleigh = true; } }
+  if (moist && ptype === 5) fields = fields.withNumberConcentrations();
+  fields.usePressureTendency = (c.eqtset ?? 2) !== 1;
+  fields.useRayleigh = (c.irdamp ?? 0) !== 0;
+  fields.useLargeScalePG = largeScalePG;
+  fields.cacheMoistureTurbulence = true;
+  fields.terrain = terrainOn;
+  const step = new TimeStep({ context: ctx, grid, vertical, dt: c.dtl, fields,
+    rho0: P('rho0'), rr0: P('rr0'), rf0: P('rf0'), th0: P('th0'), pi0: P('pi0'), qv0: prof.qv0 ?? zeros, qc0: prof.qc0 ?? zeros,
+    explicitAcoustics: (c.psolver ?? 3) === 2 });
+  const stub = { encode() {}, dispatchesPerCall: 0, setTimeStep() {} };
+  if (moist) { if (ptype === 5) step.morrison = stub; else step.microphysics = stub; }
+  if (dnsOn) step.dns = TimeStep.DNS();
+  step.noSlipBottom = (c.bbc ?? 1) === 2;
+  step.noSlipTop = (c.tbc ?? 1) === 2;
+  step.explicitVerticalDiffusion = (c.doimpl ?? 1) === 0;
+  step.rayleighToAverage = (c.irdamp ?? 0) === 2;
+  step.wenoScalars = true;
+  step.wenoMomentum = (c.advwenov ?? 0) === 2;
+  step.setForcing(null);
+  if (fields.useRayleigh) step.setRayleigh(prof.u0 ?? zeros, prof.v0 ?? zeros, c.zd ?? 15000, f(c.rdalpha ?? 3.3333333333e-3));
+  const openX = (c.wbc ?? 1) === 2, openY = (c.sbc ?? 1) === 2;
+  const rigidX = axisymm && (c.wbc ?? 1) === 3;
+  step.periodicX = !openX && !rigidX; step.periodicY = !openY; step.openX = openX; step.openY = openY; step.rigidX = rigidX;
+  // форсинг testcase
+  const tc = c.testcase ?? 0;
+  if ([3, 4, 5, 6, 7, 10].includes(tc)) {
+    const u0d = prof.lspg_u0 ? prof.lspg_u0.map((x, k) => x + umove) : zeros;
+    const fc = LargeScaleForcing.forTestcase(tc, vertical.zh, vertical.zf, u0d, prof.v0 ?? zeros, umove, vmove);
+    step.setForcing(fc, prof.v0 ?? zeros);
+  }
+  if (tc === 10) step.enableTQNudge();
+  if ([4, 5].includes(tc)) step.simpleRadiation = true;
+  // поверхность (bbc=3)
+  const sfcmodel = c.sfcmodel ?? 0;
+  if ((c.bbc ?? 1) === 3 && sfcmodel === 3) {
+    const nc = c.nx * c.ny;
+    step.landPBL = TimeStep.LandSurfacePBL.make(new Array(nc).fill(c.lu0 ?? 16), new Array(nc).fill(f(c.tsk0 ?? 299.28)),
+      new Array(nc).fill(f(297.28)));   // tmn0 в каталоге .ignored: построитель эталона его не видит
+  } else if ((c.bbc ?? 1) === 3 && sfcmodel === 5) {
+    const sf = TimeStep.SurfaceFluxes();
+    sf.model = 5; sf.constantRoughness = c.cnst_znt; sf.xland = c.xland0 ?? 2; sf.tsk0 = c.tsk0 ?? 299.28;
+    sf.testcase = tc; sf.mostUseAverage = [1, 11].includes(tc);
+    step.surfaceFluxes = sf;
+  } else if ((c.bbc ?? 1) === 3) {
+    const isfcflx = c.isfcflx ?? 0, setZnt = c.set_znt ?? 0;
+    if (setZnt === 1 && isfcflx === 0) step.surfaceRoughness = c.cnst_znt;
+    if (isfcflx === 1 || setZnt === 0) {
+      const sf = TimeStep.SurfaceFluxes();
+      sf.constantRoughness = setZnt === 1 ? c.cnst_znt : null;
+      sf.cecd = c.cecd ?? 3; sf.cnstcd = c.cnstcd ?? 0.001; sf.cnstce = c.cnstce ?? 0.001;
+      sf.xland = c.xland0 ?? 2; sf.tsk0 = c.tsk0 ?? 299.28; sf.heatAndMoisture = isfcflx === 1;
+      if ((c.lu0 ?? 16) === 3) { sf.znt0 = 10.0 / 100; sf.mavail = 0.50; } else { sf.znt0 = 0.01 / 100; sf.mavail = 1.0; }
+      if (sf.xland > 1.5) sf.mavail = 1.0;
+      sf.testcase = c.testcase ?? 0;
+      if ([2, 6].includes(tc)) sf.heatFluxCutoff = 3000;
+      if ((c.set_ust ?? 0) === 1 && setZnt === 0) sf.constantFriction = c.cnst_ust ?? 0;
+      if ((c.set_flx ?? 0) === 1 && isfcflx === 1) sf.constantFluxes = { heat: c.cnst_shflx ?? 0, moisture: c.cnst_lhflx ?? 0 };
+      step.surfaceFluxes = sf;
+    }
+  }
+  if (meso) {
+    const p = TimeStep.PBL();
+    p.vertical = ipbl === 2; p.horizontal = horizturb === 1;
+    p.linf = c.l_inf ?? 75; p.lh = c.l_h ?? 100; p.lhref1 = c.lhref1 ?? 100; p.lhref2 = c.lhref2 ?? 1000;
+    step.pbl = p;
+  }
+  if (terrainOn) {
+    // геометрия - из буферов ленты (строит F1); zt - из байтов TerrainParams
+    const n1 = c.nz + 1, sig = prof.terrain_sigma;
+    let zt = 0;
+    for (const x of tape.steps[0]) if (x.op === 'bytes' && x.index === 26) { zt = new Float32Array(Uint8Array.from(atob(x.data), ch => ch.charCodeAt(0)).buffer)[0]; break; }
+    step.terrain = { gz: prof.terrain_planes, rgz: [], gzu: [], rgzu: [], gzv: [], rgzv: [], dzdx: [], dzdy: [],
+      rds: sig.slice(0, n1), rdsf: sig.slice(n1, 2 * n1), zt };
+  }
+  if ((c.hrdamp ?? 0) === 1) step.lateralDampingWidth = c.xhd ?? 100000;
+  step.radiativeRelaxation = (c.rterm ?? 0) === 1;
+  step.scalarBoundaryFlux = c.bcturbs ?? 1;
+  step.domainMotion = [umove, vmove];
+  step.dissipativeHeating = (c.idiss ?? 0) !== 0 && (les || meso) && useTKE;
+  step.conserveDryMass = (c.apmasscon ?? 0) !== 0;
+  if (icor) {
+    step.hurricaneRadius = [6, 10].includes(tc) ? 40000.0 : 1.0e30;
+    step.setCoriolis(c.fcor ?? 0, largeScalePG, lspgrad === 0 ? 1 : lspgrad, prof.u0 ?? zeros, prof.v0 ?? zeros);
+  }
+  const acoustic = new AcousticParamsGPU({ dts: 0.1, alph: 0.6, kdiv: 0.1, smeps: 0 });
+  step.encode(ctx.makeCommandBuffer(), arena, acoustic);
+  const s1 = ctx.rec.take();
+  const snap = ctx.rec.buffers.map(b => b.u8 ? b.u8.slice() : null);
+  step.encode(ctx.makeCommandBuffer(), arena, acoustic);
+  const s2 = ctx.rec.take();
+
+  // нормализация: буфер -> подпись#длина, без барьеров
+  const keyMine = id => { const b = ctx.rec.buffers[id]; return b.label + '#' + b.length; };
+  const keyRef = id => { const b = tape.buffers[id]; return b.label + '#' + b.length; };
+  const norm = (cmds, key) => cmds.filter(x => x.op !== 'barrier').map(x => {
+    const y = { ...x };
+    if (y.op === 'buf' && y.buf >= 0) y.buf = key(y.buf);
+    if (y.op === 'copy') { y.src = key(y.src); y.dst = key(y.dst); }
+    return y;
+  });
+  // вырезать тело микрофизики из эталона
+  const cutMicro = l => {
+    const i = l.findIndex((x, k) => x.op === 'dispatch' && l.slice(0, k).reverse().find(y => y.op === 'pipe')?.name === 'mp_pdefq');
+    if (i < 0) return l;
+    const k = l.findIndex((x, n) => n > i && x.op === 'pipe' && x.name === 'diabatic_rates');
+    // [dispatch mp_pdefq] end [микрофизика] end [pipe diabatic_rates]
+    return [...l.slice(0, i + 2), ...l.slice(k - 1)];
+  };
+  const canon = o => o === undefined ? 'нет' : JSON.stringify(o, Object.keys(o).sort());
+  let bad = 0;
+  const cmp = (what, mine, ref) => {
+    let pipe = '?', n = 0, first = -1;
+    const len = Math.max(mine.length, ref.length);
+    for (let i = 0; i < len; i++) {
+      if (ref[i]?.op === 'pipe') pipe = ref[i].name;
+      const x = canon(mine[i]), y = canon(ref[i]);
+      if (x !== y) {
+        n++;
+        if (first < 0) { first = i; out(`  ${what}: команда ${i} (ядро ${pipe}): js ${x} | эталон ${y}`); }
+      }
+    }
+    if (n) bad++;
+    return `${what} ${n ? 'РАСХОДИТСЯ' : 'да'} (${mine.length} / ${ref.length})`;
+  };
+  const r1 = cmp('шаг 1', norm(s1, keyMine), cutMicro(norm(tape.steps[0], keyRef)));
+  const r2 = cmp('шаг 2', norm(s2, keyMine), cutMicro(norm(tape.steps[1], keyRef)));
+  // содержимое созданных шагом буферов
+  let bufBad = 0, bufN = 0;
+  if (haveBuffers) {
+    const used = new Set();
+    ctx.rec.buffers.forEach((b, id) => {
+      if (!b.u8) return;
+      const ref = tape.buffers.find(r => !used.has(r.id) && r.label === b.label && r.length === b.length && refBytes[r.id]);
+      if (!ref) {
+        // впервые используется на шаге 2: снимка «до» у записывателя нет
+        if (tape.buffers.some(r => r.label === b.label && r.length === b.length)) return;
+        out(`  нет эталона для буфера ${b.label}#${b.length}`); bufBad++; return;
+      }
+      used.add(ref.id); bufN++;
+      const w = new Uint32Array(refBytes[ref.id].buffer, 0, b.length >> 2), g = new Uint32Array(snap[id].buffer, 0, b.length >> 2);
+      let n = 0, first = -1;
+      for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { n++; if (first < 0) first = i; }
+      if (n) {
+        bufBad++;
+        const fw = new Float32Array(w.buffer, 0, w.length), fg = new Float32Array(g.buffer, 0, w.length);
+        out(`  буфер ${b.label}#${b.length}: ${n} слов; [${first}] js ${fg[first]} эталон ${fw[first]}`);
+      }
+    });
+  }
+  if (bufBad) bad++;
+  out(`${bad ? 'РАСХОЖДЕНИЕ' : 'СОВПАЛО'} ${name}: ${r1}, ${r2}, буферы ${haveBuffers ? `${bufN - bufBad}/${bufN}` : 'нет эталона'}`);
+  return !bad;
+}
+let ok = 0;
+for (const n of names) { try { if (await check(n)) ok++; } catch (e) { out(`ОШИБКА ${n}: ${e?.stack || e}`); } }
+out(`ИТОГ: ${ok} из ${names.length}`);
+out('ГОТОВО');
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<meta charset="utf-8">
+<title>Сверка шага</title>
+<pre id="log"></pre>
+<script type="module">
+import { Replayer } from './replay.js';
+const q = new URLSearchParams(location.search);
+const tapeDir = '../tape/' + (q.get('tape') || 'supercell') + '/';
+const kdir = '../build/' + (q.get('k') || 'kernels') + '/';
+const T0 = performance.now();
+const post = s => { s = `[${((performance.now() - T0) / 1000).toFixed(1)}] ` + s; document.getElementById('log').textContent += s + '\n';
+  if (window.webkit?.messageHandlers?.out) webkit.messageHandlers.out.postMessage(s); else console.log(s); };
+const bin = async u => new Uint8Array(await (await fetch(u, { cache: 'no-store' })).arrayBuffer());
+try {
+  const tape = await (await fetch(tapeDir + 'tape.json', { cache: 'no-store' })).json();
+  const kernels = await (await fetch(kdir + 'kernels.json', { cache: 'no-store' })).json();
+  const names = [...new Set([...tape.steps[0], ...(tape.diag || [])].filter(c => c.op === 'pipe').map(c => c.name))];
+  const sources = {};
+  await Promise.all(names.map(async n => { sources[n] = await (await fetch(kdir + n + '.wgsl', { cache: 'no-store' })).text(); }));
+  const adapter = await navigator.gpu.requestAdapter();
+  const device = await adapter.requestDevice({ requiredLimits: {
+    maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
+  device.addEventListener('uncapturederror', e => post('ОШИБКА GPU ' + e.error.message));
+  const kt = q.has('ktrace') ? +q.get('ktrace') : null;
+  let ktOp = null;
+  if (kt !== null) {
+    let n = -1, name = null;
+    for (const c of tape.steps[0]) { if (c.op === 'pipe') name = c.name; if (c.op === 'dispatch' && ++n === kt) break; }
+    sources[name] = await (await fetch(q.get('src'), { cache: 'no-store' })).text();
+    ktOp = name;
+  }
+  const r = new Replayer(device, tape, kernels, sources);
+  r.onSlow = (k, dt) => post(`медленно собирается ${k}: ${(dt / 1000).toFixed(1)} с`);
+  r.plan(true);
+  if (kt !== null) { r.dbgBase = r.memWords; r.memWords += 400000; }
+  post(`память ${(r.memWords * 4 / 1e6).toFixed(0)} МБ, запусков ${r.ops.length}, хэшей ${r.hashCount}`);
+  let t0 = performance.now();
+  await r.build();
+  post(`конвейеры: ${((performance.now() - t0) / 1000).toFixed(1)} с`);
+  for (const b of tape.buffers) r.upload(b.id, await bin(`${tapeDir}buffers/${b.id}.pre.bin`));
+  post('состояние загружено');
+  if (q.has('nsteps')) {
+    for (const N of q.get('nsteps').split(',').map(Number)) {
+      for (const b of tape.buffers) r.upload(b.id, await bin(`${tapeDir}buffers/${b.id}.pre.bin`));
+      const e = device.createCommandEncoder(); r.encodeSteps(e, N, false); device.queue.submit([e.finish()]);
+      const mem = await r.read(r.buffersEnd);
+      let total = 0; const per = new Map();
+      for (const b of tape.buffers) {
+        const w = new Uint32Array((await bin(`${tapeDir}buffers/${b.id}.step${N}.bin`)).buffer);
+        const g = mem.subarray(r.base[b.id], r.base[b.id] + w.length);
+        for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) {
+          total++;
+          const key = b.arena ? (Object.entries(tape.fields).find(([k, v]) => v === Math.floor(i * 4 / tape.fieldStride) * tape.fieldStride)?.[0] ?? '?') : b.label || ('буфер ' + b.id);
+          per.set(key, (per.get(key) || 0) + 1);
+          if ((per.get(key) || 0) <= 2 && q.has('vals')) {
+            const fv = x => new Float32Array(new Uint32Array([x]).buffer)[0].toPrecision(8) + "(" + (x >>> 0).toString(16) + ")";
+            const off = b.arena ? i - Math.floor(i * 4 / tape.fieldStride) * tape.fieldStride / 4 : i;
+            post(`  ${key}[${off}] эталон ${fv(w[i])} web ${fv(g[i])}`);
+          }
+        }
+      }
+      post(`после ${N} шагов: не совпало ${total} слов` + (total ? ' | ' + [...per].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, c]) => k + ':' + c).join(' ') : ''));
+    }
+    post('ГОТОВО'); throw 'stop';
+  }
+  if (q.has('plain')) {
+    for (let n = 1; n <= +q.get('plain'); n++) {
+      const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+      await device.queue.onSubmittedWorkDone();
+      if (n % 5 === 0) post(`шаг ${n}`);
+    }
+    post('ГОТОВО'); throw 'stop';
+  }
+  if (q.has('guard')) {
+    // цела ли область параметров (setBytes) после каждого шага
+    const lo = r.buffersEnd, hi = r.scratchBase;
+    const want = new Uint32Array(hi - lo);
+    for (const [off, data] of r.bytes) want.set(new Uint32Array(data.buffer), off - lo);
+    for (let n = 1; n <= +q.get('guard'); n++) {
+      const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+      const got = await r.read(hi - lo, lo);
+      let bad = 0, first = -1;
+      for (let i = 0; i < want.length; i++) if (got[i] !== want[i]) { bad++; if (first < 0) first = i; }
+      if (bad) { post(`шаг ${n}: испорчено ${bad} слов области параметров, первое ${lo + first}`); break; }
+      post(`шаг ${n}: цело`);
+    }
+    post('ГОТОВО'); throw 'stop';
+  }
+  if (q.has('hang')) {
+    device.lost.then(i => post('УСТРОЙСТВО ПОТЕРЯНО ' + i.reason + ' ' + i.message));
+    device.addEventListener('uncapturederror', e => post('ОШИБКА GPU ' + e.error.message));
+    const N = +q.get('hang');
+    let e0 = device.createCommandEncoder(); r.encodeSteps(e0, N, false); device.queue.submit([e0.finish()]);
+    await device.queue.onSubmittedWorkDone();
+    post(`${N} шагов посчитано`);
+    for (let i = 0; i < r.ops.length; i++) {
+      const tq = performance.now();
+      const e1 = device.createCommandEncoder();
+      const pass = e1.beginComputePass();
+      const op = r.ops[i];
+      if (op.kind === 'copy') { pass.setPipeline(r.pipes.get('_copy')); pass.setBindGroup(0, r.bind, [op.slot * 256]); pass.dispatchWorkgroups(Math.ceil(op.n / 256)); }
+      else { pass.setPipeline(r.pipes.get(op.pkey)); pass.setBindGroup(0, r.bind, [op.slot * 256]);
+        pass.dispatchWorkgroups(Math.ceil(op.grid[0] / op.tg[0]), Math.ceil(op.grid[1] / op.tg[1]), Math.ceil(op.grid[2] / op.tg[2])); }
+      pass.end(); device.queue.submit([e1.finish()]);
+      await device.queue.onSubmittedWorkDone();
+      const dt = performance.now() - tq;
+      if (dt > 50 || i > 300) post(`запуск ${i} ${r.ops[i].name || 'copy'}: ${dt.toFixed(0)} мс`);
+    }
+    post('шаг прошёл'); post('ГОТОВО'); throw 'stop';
+  }
+  if (kt !== null) {
+    for (const b of tape.buffers) r.upload(b.id, await bin(`${tapeDir}buffers/${b.id}.stop.bin`));
+    device.queue.writeBuffer(r.mem, r.dbgBase * 4, new Uint32Array(400000).fill(0xffffffff));
+    let n = -1, op = null;
+    for (const o of r.ops) if (o.kind === 'k' && ++n === kt) { op = o; break; }
+    device.queue.writeBuffer(r.arg, (op.slot * 64 + 4 + 28) * 4, new Uint32Array([r.dbgBase]));
+    const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false, Infinity, [op]); device.queue.submit([e.finish()]);
+    const got = await r.read(400000, r.dbgBase);
+    const want = new Uint32Array((await bin(tapeDir + 'trace.ref.bin')).buffer);
+    const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer);
+    const fv = x => { u32[0] = x; return f32[0].toPrecision(9); };
+    let len = 0; while (len * 2 < want.length && want[len * 2] !== 0xffffffff) len++;
+    let i = 0;
+    for (; i < len; i++) if (want[2 * i] !== got[2 * i] || want[2 * i + 1] !== got[2 * i + 1]) break;
+    post(`трасса ${ktOp}: записей эталона ${len}, совпало первых ${i}`);
+    for (let k = Math.max(0, i - 4); k < Math.min(len, i + 3); k++)
+      post(`  #${k} строка ${want[2 * k]}: эталон ${fv(want[2 * k + 1])} (${want[2 * k + 1].toString(16)})  web строка ${got[2 * k]} ${fv(got[2 * k + 1])} (${got[2 * k + 1].toString(16)})`);
+    post('ГОТОВО'); throw 'stop';
+  }
+  const stop = q.has('stop') ? +q.get('stop') : null;
+  if (stop !== null) {
+    let kn = -1, last = -1;
+    for (let i = 0; i < r.ops.length; i++) if (r.ops[i].kind === 'k' && ++kn === stop) { last = i; break; }
+    const enc0 = device.createCommandEncoder();
+    if (+(q.get('pre') || 0)) r.encodeSteps(enc0, +q.get('pre'), false);
+    r.encodeSteps(enc0, 1, false, last);
+    device.queue.submit([enc0.finish()]);
+    post(`отправлено до операции ${last}`);
+    await device.queue.onSubmittedWorkDone();
+    post('посчитано');
+    const mem = await r.read(r.buffersEnd);
+    post('прочитано');
+    const op = r.ops[last];
+    post(`остановка после запуска ${stop}: ${op.name}`);
+    const H = tape.halo, sJ = tape.nx + 1 + 2 * H, sK = sJ * (tape.ny + 1 + 2 * H);
+    const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer);
+    const fv = x => { u32[0] = x; return f32[0].toPrecision(9); };
+    for (const b of tape.buffers) {
+      const w = new Uint32Array((await bin(`${tapeDir}buffers/${b.id}.stop.bin`)).buffer);
+      const g = mem.subarray(r.base[b.id], r.base[b.id] + w.length);
+      let n = 0;
+      const shown = new Map();
+      for (let i = 0; i < w.length; i++) {
+        if (w[i] === g[i]) continue;
+        n++;
+        if (b.arena) {
+          const ff = Math.floor(i * 4 / tape.fieldStride), e = i - ff * tape.fieldStride / 4;
+          const fname = Object.entries(tape.fields).find(([k, v]) => v === ff * tape.fieldStride)?.[0] ?? ff;
+          const c = shown.get(fname) || { n: 0, ex: [], inner: 0 };
+          c.n++;
+          { const k = Math.floor(e / sK), j = Math.floor((e - k * sK) / sJ) - H, ii = e - k * sK - (j + H) * sJ - H;
+            if (ii >= 0 && ii < tape.nx && j >= 0 && j < tape.ny) { c.inner++; if (c.ex.length >= 3 && c.ex.length < 6 && !c.exIn) { c.exIn = true; c.ex.push(`внутри (${ii},${j},${k}) эталон ${fv(w[i])} web ${fv(g[i])}`); } } }
+          if (c.ex.length < 6) {
+            const k = Math.floor(e / sK), j = Math.floor((e - k * sK) / sJ) - H, ii = e - k * sK - (j + H) * sJ - H;
+            c.ex.push(`(${ii},${j},${k}) эталон ${fv(w[i])} web ${fv(g[i])}`);
+          }
+          shown.set(fname, c);
+        } else if (n <= 6) post(`  буфер ${b.id} ${b.label}[${i}]: эталон ${fv(w[i])} (${w[i]}) web ${fv(g[i])} (${g[i]})`);
+      }
+      if (n) post(`буфер ${b.id} ${b.label}: не совпало ${n}`);
+      for (const [f, c] of shown) post(`  поле ${f}: ${c.n} точек (внутри области ${c.inner}); ${c.ex.join('; ')}`);
+    }
+    post('ГОТОВО'); throw 'stop';
+  }
+  // шаг с хэшами (?pre=K: после K простых шагов)
+  const preK = +(q.get('pre') || 0);
+  if (preK) { const e0 = device.createCommandEncoder(); r.encodeSteps(e0, preK, false); device.queue.submit([e0.finish()]); }
+  let enc = device.createCommandEncoder();
+  r.encodeSteps(enc, 1, true);
+  device.queue.submit([enc.finish()]);
+  await device.queue.onSubmittedWorkDone();
+  const got = await r.readHashes();
+  const want = new Uint32Array((await bin(tapeDir + (preK ? `hashes.ref.pre${preK}.bin` : 'hashes.ref.bin'))).buffer);
+  if (preK) { /* сравнение буферов ниже - только для шага 1 */ }
+  let firstBad = null, nbad = 0;
+  for (const op of r.ops) for (const h of op.hashes || []) {
+    if (got[h.slot] !== want[h.slot]) { nbad++; if (!firstBad) firstBad = { op, h }; }
+  }
+  if (firstBad) {
+    const i = r.ops.indexOf(firstBad.op);
+    const p = kernels[firstBad.op.name].params.find(p => firstBad.op.bind.get(p.index) === firstBad.h.off && p.write);
+    post(`ПЕРВОЕ РАСХОЖДЕНИЕ: запуск ${i} ${firstBad.op.name}, буфер ${p?.index} (${p?.name}); всего разошлось хэшей ${nbad} из ${r.hashCount}`);
+  } else post(`хэши: все ${r.hashCount} совпали с эталоном`);
+  // состояние после шага
+  const mem = await r.read(r.buffersEnd);
+  post('состояние прочитано');
+  let bufBad = 0;
+  for (const b of tape.buffers) {
+    const w = new Uint32Array((await bin(`${tapeDir}buffers/${b.id}.step1.bin`)).buffer);
+    const g = mem.subarray(r.base[b.id], r.base[b.id] + w.length);
+    let n = 0, first = -1;
+    for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { n++; if (first < 0) first = i; }
+    if (n) {
+      bufBad++;
+      let where = '';
+      if (b.arena) {
+        const f = Math.floor(first * 4 / tape.fieldStride);
+        const name = Object.entries(tape.fields).find(([k, v]) => v === f * tape.fieldStride)?.[0];
+        where = ` поле ${f} ${name ?? ''}`;
+        const per = new Map();
+        for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { const ff = Math.floor(i * 4 / tape.fieldStride); per.set(ff, (per.get(ff) || 0) + 1); }
+        where += ' | по полям: ' + [...per].slice(0, 12).map(([ff, c]) => (Object.entries(tape.fields).find(([k, v]) => v === ff * tape.fieldStride)?.[0] ?? ff) + ':' + c).join(' ');
+      }
+      post(`буфер ${b.id} ${b.label}: не совпало ${n} слов из ${w.length}, первое ${first}${where}`);
+    }
+  }
+  post(`после шага: буферов не совпало ${bufBad} из ${tape.buffers.length}`);
+  // скорость: 10 шагов без хэшей
+  for (const b of tape.buffers) r.upload(b.id, await bin(`${tapeDir}buffers/${b.id}.pre.bin`));
+  enc = device.createCommandEncoder(); r.encodeSteps(enc, 1, false); device.queue.submit([enc.finish()]);
+  await device.queue.onSubmittedWorkDone();
+  t0 = performance.now();
+  enc = device.createCommandEncoder(); r.encodeSteps(enc, 10, false); device.queue.submit([enc.finish()]);
+  await device.queue.onSubmittedWorkDone();
+  post(`скорость: ${((performance.now() - t0) / 10).toFixed(1)} мс на шаг`);
+} catch (e) { if (e !== 'stop') post('ОШИБКА ' + (e.stack || e)); }
+if (!['stop', 'hang', 'guard', 'nsteps', 'ktrace', 'plain'].some(k => new URLSearchParams(location.search).has(k))) post('ГОТОВО');
+</script>

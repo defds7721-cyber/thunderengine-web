@@ -1,0 +1,27 @@
+# Доска почёта (web/shame.html): раз в час забрать журнал ключа-приманки
+# и обновить data/shame.json, если что-то изменилось.
+name: hall-of-shame
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: hall-of-shame
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Журнал приманки
+        env:
+          CANARY_HISTORY_URL: ${{ secrets.CANARY_HISTORY_URL }}
+        run: python3 tools/shame_update.py
+      - name: Коммит, если изменилось
+        run: |
+          git diff --quiet -- data/shame.json && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/shame.json
+          git commit -m "Доска почёта: новые попытки"
+          git push

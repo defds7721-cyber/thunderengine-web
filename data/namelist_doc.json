@@ -1,0 +1,787 @@
+{
+ "nx": {
+  "section": "param0",
+  "readme": 20,
+  "text": " nx - Total number of grid points in x direction"
+ },
+ "ny": {
+  "section": "param0",
+  "readme": 22,
+  "text": " ny - Total number of grid points in y direction"
+ },
+ "nz": {
+  "section": "param0",
+  "readme": 24,
+  "text": " nz - Total number of grid points in z direction"
+ },
+ "ppnode": {
+  "section": "param0",
+  "readme": 26,
+  "text": " ppnode - MPI processes per node  (for MPI runs only)\n\n         NOTEs:  - ppnode is used for input/output purposes only.\n                 - This is hardware dependent, so check the documentation\n                   for your supercomputer.\n                 - For NCAR's yellowstone, use ppnode=16.\n                 - For NCAR's cheyenne, use ppnode=36.\n                 - If you're not certain what to use, just take a guess;\n                   this doesn't affect model performance, but it can make\n                   parallel I/O a little faster and cleaner (i.e., fewer\n                   restart files, for example)."
+ },
+ "timeformat": {
+  "section": "param0",
+  "readme": 38,
+  "text": " timeformat - Format for text printout of model integration time:\n             1 = seconds\n             2 = minutes\n             3 = hours\n             4 = days"
+ },
+ "timestats": {
+  "section": "param0",
+  "readme": 44,
+  "text": " timestats - 0 = Do not provide provide timing statistics\n             1 = Provide timing statistics at end of simulation\n             2 = The same as 1, but include time required to complete\n                 each time step"
+ },
+ "terrain_flag": {
+  "section": "param0",
+  "readme": 49,
+  "text": " terrain_flag -  .true.  = With terrain\n                 .false. = No terrain (flat lower boundary)"
+ },
+ "procfiles": {
+  "section": "param0",
+  "readme": 52,
+  "text": " procfiles -  .true.  = Text printout/config files for every MPI process\n              .false. = Only one text printout/config file  (Default)"
+ },
+ "dx": {
+  "section": "param1",
+  "readme": 58,
+  "text": " dx - Horizontal grid spacing in x direction (m)."
+ },
+ "dy": {
+  "section": "param1",
+  "readme": 60,
+  "text": " dy - Horizontal grid spacing in y direction (m)."
+ },
+ "dz": {
+  "section": "param1",
+  "readme": 62,
+  "text": " dz - Vertical grid spacing (m).\n\n    NOTE:\n       The variables dx,dy,dz are only used when stretch_* = 0.  When\n       stretch_* >= 1, these variables should be set to an approximately\n       average value (to minimize roundoff errors).  See README.stretch\n       for more information."
+ },
+ "dtl": {
+  "section": "param1",
+  "readme": 70,
+  "text": " dtl - Large time step (s).\n\n       For psolver = 2,3,4,5,6 this time step is limited by the fastest\n       nonacoustic speed.  For thunderstorm simulations, this is usually\n       the maximum vertical velocity.  Otherwise, this would be the\n       propagation speed of gravity waves.  The following is a rough\n       estimate that usually works well for convective storm simulations:\n           dtl = min(dx,dy,dz)/67  (rounded to an appropriate value, of course)\n\n       For psolver=1, this time step is limited by the propagation speed of\n       sound waves.  dtl of about min(dx,dy,dz)/700 is recommended.\n\n      When using adaptive time-stepping, set dtl to a reasonable\n      \"target\" value (i.e., a value you think would probably be best for your\n      simulation).  This will be used as the initial timestep."
+ },
+ "timax": {
+  "section": "param1",
+  "readme": 86,
+  "text": " timax - Maximum integration time (s)."
+ },
+ "run_time": {
+  "section": "param1",
+  "readme": 88,
+  "text": " run_time - Integration time (s) to run model from current time.\n            NOTE: Ignored if value is less than zero.\n            NOTE: Overrides timax.\n            (Useful for restarts.  For example, just integrate model\n             \"run_time\" seconds forward from current time.)"
+ },
+ "tapfrq": {
+  "section": "param1",
+  "readme": 94,
+  "text": " tapfrq - Frequency of three-dimensional model output (s).\n          Output is in cm1out files."
+ },
+ "rstfrq": {
+  "section": "param1",
+  "readme": 97,
+  "text": " rstfrq - Frequency to save model restart files (s).  Set to a negative\n          number if restart files are not desired."
+ },
+ "statfrq": {
+  "section": "param1",
+  "readme": 100,
+  "text": " statfrq - Frequency for calculating some interesting output.  (seconds)\n           Set to negative number to output stats every timestep.\n           Output is in cm1out_stats.dat file.\n           See param10 section below for the information that can\n           be requested."
+ },
+ "prclfrq": {
+  "section": "param1",
+  "readme": 106,
+  "text": " prclfrq - Frequency to output parcel data (s).  Note ... this does not\n           affect the parcel calculations themselves, which are always\n           updated every timestep;  it merely tells the model how\n           frequently to output the information.  Set to a negative number\n           to output parcel data every time step."
+ },
+ "cm1setup": {
+  "section": "param2",
+  "readme": 116,
+  "text": " cm1setup - Overall CM1 setup, base on how turbulence is handled:\n\n      0 = no subgrid turbulence model & no explicit diffusion\n            - essentially integrates the Euler equations\n              (adiabatic and inviscid flow)\n              (although, diffusion can still occur via numerical methods)\n            - NOTE:  ignores sgsmodel, param7 section, etc\n\n      1 = large-eddy simulation (LES)\n            - integrates filtered Navier-Stokes equations (ie, LES equations)\n            - NOTE:  user must set \"sgsmodel\" (and related parameters) below\n\n      2 = mesoscale modeling with planetary boundary layer (PBL) parameterization\n            - essentially uses Reynolds-averaged Navier-Stokes (RANS) equations\n            - NOTE:  user must set \"ipbl\" below\n\n      3 = direct numerical simulation (DNS)\n            - integrates Navier-Stokes equations with explicit diffusion and\n              diffusivity terms\n            - NOTE:  user must set the parameters in \"param7\" section below"
+ },
+ "testcase": {
+  "section": "param2",
+  "readme": 139,
+  "text": " testcase - Turns on certain simplied physics schemes and/or specified\n            tendency terms and/or special settings for well-documented\n            test cases.\n\n    0  =  Default.  (no special physics, forcings, or configutation)\n          - Most users will use testcase=0.\n\n    1  =  Convective Boundary Layer (CBL) using Large Eddy Simulation (LES)\n          - Based on Sullivan and Patton (2011, JAS, pg 2395)\n          - See namelist.input in directory run/config_files/les_ConvBoundLayer\n\n    2  =  Sheared Boundary Layer (SBL) using Large Eddy Simulation (LES)\n          - Based on Moeng and Sullivan (1994, JAS, pg 999)\n          - See namelist.input in directory run/config_files/les_ShearBoundLayer\n\n    3  =  Shallow cumulus clouds using Large Eddy Simulation (LES)\n          - Based on Siebesma et al (2003, JAS, pg 1201)\n          - See namelist.input in directory run/config_files/les_ShallowCu\n\n    4  =  Nonprecipitating stratocumulus clouds using Large Eddy Simulation (LES)\n          - Based on Stevens et al (2005, MWR, pg 1443)\n          - See namelist.input in directory run/config_files/les_StratoCuNoPrecip\n\n    5  =  Drizzling stratocumulus clouds using Large Eddy Simulation (LES)\n          - Based on Ackerman et al (2009, MWR, pg 1083)\n          - See namelist.input in directory run/config_files/les_StratoCuDrizzle\n\n    6  =  Hurricane Boundary Layer (HBL) using Large Eddy Simulation (LES)\n          - Based on Bryan et al (2017, BLM, pg 475)\n          - See namelist.input in directory run/config_files/les_HurrBoundLayer\n\n          Also: a single-column model (SCM) version using a PBL scheme is\n          available.\n          - See namelist.input in directory run/config_files/scm_HurrBoundLayer\n\n    7  =  Precipitating shallow cumulus clouds using Large Eddy Simulation (LES)\n          - Based on RICO shallow Cu case (VanZanten et al 2011, JAMES)\n          - See namelist.input in run/config_files/les_ShallowCuPrecip\n\n    8  =  Convection Permitting Model (CPM) simulation of Radiative Convective\n          Equilibrium (RCE)\n          - Based on Bretherton et al (2005, JAS)\n          - See namelist.input in run/config_files/cpm_RadConvEquil\n\n    9  =  Stable boundary layer using Large Eddy Simulation (LES)\n          - Based on Beare et al. (2006, BLM)\n          - See namelist.input in run/config_files/les_StableBoundLayer\n\n    10 =   Hurricane boundary layer with LES or single-column modeling\n           with heat and moisture stratification.  Experimental:  uses\n           nudging to help maintain original temperature and moisture\n           profiles.  See \"tqnudge\" in solve.F for more information and\n           settings."
+ },
+ "adapt_dt": {
+  "section": "param2",
+  "readme": 194,
+  "text": " adapt_dt - Use adaptive timestep?  (0=no, 1=yes)\n            Model automatically adjusts timestep to maintain stability.\n        NOTE: - a reasonable value must still be assigned to dtl (above),\n                which will be used as the initial timestep"
+ },
+ "irst": {
+  "section": "param2",
+  "readme": 199,
+  "text": " irst - Is this a restart?  (0=no, 1=yes)"
+ },
+ "rstnum": {
+  "section": "param2",
+  "readme": 201,
+  "text": " rstnum - If this is a restart, this variable specifies the number of the\n          restart file.  For example, for file cm1out_0000_0002_rst.dat,\n          rstnum is 2."
+ },
+ "iconly": {
+  "section": "param2",
+  "readme": 205,
+  "text": " iconly - Setup initial conditions only?\n              1 = creates initial conditions, but does not run model.\n              0 = creates initial conditions, and proceeds with integration."
+ },
+ "hadvordrs": {
+  "section": "param2",
+  "readme": 209,
+  "text": " hadvordrs - Order of horizontal advection scheme for scalars."
+ },
+ "vadvordrs": {
+  "section": "param2",
+  "readme": 210,
+  "text": " vadvordrs - Order of vertical advection scheme for scalars."
+ },
+ "hadvordrv": {
+  "section": "param2",
+  "readme": 211,
+  "text": " hadvordrv - Order of horizontal advection scheme for velocities."
+ },
+ "vadvordrv": {
+  "section": "param2",
+  "readme": 212,
+  "text": " vadvordrv - Order of vertical advection scheme for velocities.\n                [Valid options are 2,3,4,5,6,7,8,9,10]\n\n           Odd-ordered schemes have implicit diffusion.  If an odd-ordered\n           scheme is used (3,5,7,9) then idiff can be set to 0 (i.e., no\n           additional artifical diffusion is typically necessary).\n\n           Even-ordered schemes (2,4,6,8,10) usually require additional artifical\n           diffusion for stability (i.e., idiff=1 is recommended).  Users can use\n           idiff=1 with difforder=6 and a value of kdiff6 between about 0.02-0.24"
+ },
+ "advwenos": {
+  "section": "param2",
+  "readme": 223,
+  "text": " advwenos - Advect scalars (except pressure) with WENO scheme?"
+ },
+ "advwenov": {
+  "section": "param2",
+  "readme": 224,
+  "text": " advwenov - Advect velocities with WENO scheme?\n            0 = no\n            1 = yes, apply on every Runge-Kutta step\n            2 = yes, apply on final Runge-Kutta step only  (default)"
+ },
+ "weno_order": {
+  "section": "param2",
+  "readme": 229,
+  "text": " weno_order - Formulation for the WENO scheme.\n              Valid options are 3, 5, 7, 9\n\n        References:\n        original 3rd and 5th order weno:  Jiang and Shu, 1996,\n        J. Comput. Phys., 126, pg 202\n\n        original 7th and 9th order weno:  Balsara and Shu, 2000,\n        J. Comput. Phys., 160, pg 405\n\n              *** CM1 default formulation ***\n        5th order with improved smoothness indicators:\n        Borges et al, 2008, J. Comput. Phys., 227, pg 3191"
+ },
+ "apmasscon": {
+  "section": "param2",
+  "readme": 243,
+  "text": " apmasscon - Adjust average pressure perturbation to ensure conservation\n             of dry-air mass?    0 = no\n                                 1 = yes\n\n             Note:  This option checks the total dry-air mass\n                    in the domain and adjusts the domain-average\n                    pressure perturbation to ensure conservation.\n                    In general, this option is only needed for long\n                    (several days or more) simulations."
+ },
+ "idiff": {
+  "section": "param2",
+  "readme": 253,
+  "text": " idiff - Include additional artificial diffusion?  (0=no, 1=yes)\n         (in addition to any diffusion associated with cm1setup setting)\n\n           For idiff=1, diffusion of all variables.\n           For idiff=2, diffusion only applied to winds (u,v,w).\n\n         User must also set difforder and kdiff2 or kdiff6."
+ },
+ "mdiff": {
+  "section": "param2",
+  "readme": 261,
+  "text": " mdiff - When idiff=1 and difforder=6, apply monotonic version of\n         artificial diffusion?\n\n           (0=no, 1=yes)\n\n           Reference:  Xue, 2000, MWR, p 2853."
+ },
+ "difforder": {
+  "section": "param2",
+  "readme": 268,
+  "text": " difforder - Order of diffusion scheme.  2=second order, 6=sixth order.\n\n           Second order diffusion is not generally recommended.  It is\n           only used for certain idealized cases.  kdiff2 must be set\n           appropriately when difforder=2.\n\n           Sixth order diffusion is recommended for general use when\n           diffusion of small scales (2-6 delta) is needed.  User must\n           also set kdiff6 when difforder=6.\n\n           (not available for axisymmetric simulations)"
+ },
+ "imoist": {
+  "section": "param2",
+  "readme": 280,
+  "text": " imoist - Include moisture?  (0=no, 1=yes)"
+ },
+ "ipbl": {
+  "section": "param2",
+  "readme": 282,
+  "text": " ipbl - Use a planetary boundary layer (PBL) parameterization?\n\n             0 = no\n\n             1 = Yonsei University (YSU) PBL parameterization\n                   Reference:  Hong et al, 2006, MWR, p 2318\n                   (\"bl_pbl_physics = 1\" in WRF)\n\n             2 = simple PBL parameterization (Louis-type scheme)\n                 Reference:  Bryan and Rotunno (2009, MWR, pg 1773)\n\n                --- NEW for cm1r19.9 ---\n             3 = GFS-EDMF  (as configured in HWRF_v4.0a)\n                  Reference:  Hong and Pan, 1996, MWR, pg 2322\n\n                --- NEW for cm1r19.10 ---\n             4 = MYNN (Mellor-Yamada-Nakanishi-Niino) level 2.5\n                  Reference:  Nakanishi and Niino (2006, BLM)\n\n                --- NEW for cm1r19.10 ---\n             5 = MYNN (Mellor-Yamada-Nakanishi-Niino) level 3\n                  Reference:  Nakanishi and Niino (2006, BLM)\n\n                --- NEW for cm1r20.1 ---\n             6 = MYJ (Mellor-Yamada-Janjic)\n\n        Note:  ipbl >= 1 requires cm1setup = 2"
+ },
+ "sgsmodel": {
+  "section": "param2",
+  "readme": 310,
+  "text": " sgsmodel - Subgrid-scale turbulence model for Large Eddy Simulation (LES)\n                 Note:  only used for cm1setup = 1\n\n              1 = TKE scheme (eg, Deardorff, 1980, BLM)\n                  (previously, this was iturb=1)\n              2 = Smagorinsky scheme (eg, Stevens et al, 1999, JAS, see\n                  Appendix B, section b, \"Equilibrium models\")\n                  (previously, this was iturb=2)\n --- NEW ---  3 = sgsmodel=1 (TKE scheme) + Sullivan et al (1994, BLM)\n                  version of two-part model\n --- NEW ---  4 = sgsmodel=1 (TKE scheme) + Bryan (2020, in prep)\n                  version of two-part model\n --- NEW ---  5 = Nonlinear Backscatter and Anisotropy (NBA) model,\n                  Deardorff-type TKE version (Mirocha et al. 2010, MWR)\n --- NEW ---  6 = Nonlinear Backscatter and Anisotropy (NBA) model,\n                  Smagorinsky-type version (Mirocha et al. 2010, MWR)"
+ },
+ "tconfig": {
+  "section": "param2",
+  "readme": 328,
+  "text": " tconfig - Calculation of turbulence coefficients for sgsmodel = 1 or 2\n            1 = horizontal and vertical turbulence coefficients are the\n                same;  use this if dx,dy are about equal to dz (default)\n            2 = horizontal turbulence coefficient is different from vertical\n                turbulence coefficient;  use this if dx,dy are much greater\n                than dz."
+ },
+ "bcturbs": {
+  "section": "param2",
+  "readme": 335,
+  "text": " bcturbs - Lower/upper boundary condition for vertical diffusion of all\n           scalars.  (Applies only to sgsmodel=1,2 and ipbl=2)\n                 1 = zero flux (default)\n                 2 = zero gradient"
+ },
+ "horizturb": {
+  "section": "param2",
+  "readme": 340,
+  "text": " horizturb - Horizontal turbulence parameterization\n             (i.e., horizontal Smagorinsky scheme)\n             Reference:  Bryan and Rotunno (2009, MWR, pg 1773)\n             (note:  previously, this was part of iturb=3)\n\n                 0 = no\n                 1 = yes\n\n        Note:  horizturb = 1 requires cm1setup = 2"
+ },
+ "doimpl": {
+  "section": "param2",
+  "readme": 350,
+  "text": " doimpl - Vertically implicit calculation for vertical turbulence tendencies\n\n                 0 = no   (use vertically explicit scheme)\n                 1 = YES  (use vertically implicit scheme)\n                    (note:  doimpl=1 was required in cm1r18)\n\n          Default formulation (doimpl=1) is a Crank-Nicholson scheme, which is\n          absolutely stable (i.e., numerically stable regardless of time step).\n\n          For doimpl=0, an explicit scheme is used for vertical turbulence\n          tendencies, which can severely limit the time step for simulations\n          with small vertical grid spacing."
+ },
+ "irdamp": {
+  "section": "param2",
+  "readme": 363,
+  "text": " irdamp - Use upper-level Rayleigh damping zone?\n             (acts on u,v,w, and theta only)\n          (User must set rdalpha and zd below)\n\n                  0 = no\n                  1 = yes, damp towards base state\n                  2 = yes, damp towards horizontal average\n                        (useful for very long simulations, eg, > 10 days)"
+ },
+ "hrdamp": {
+  "section": "param2",
+  "readme": 372,
+  "text": " hrdamp - Use Rayleigh damping near lateral boundaries (0=NO,  1=yes)\n             (acts on u,v,w only)\n          (User must set rdalpha and xhd below)"
+ },
+ "psolver": {
+  "section": "param2",
+  "readme": 376,
+  "text": " psolver - Option for  pressure solver.\n\n       1 = truly compressible:  no acoustic damping, no small time steps,\n                                no implicit numerics\n       2 = Klemp-Wilhelmson time-splitting, fully explicit:  uses K-W split\n                              time steps for acoustic modes, with explicit\n                              treatment of acoustic terms in both vertical\n                              and horizontal directions.\n                              (use if dx,dy,dz are approximately equal)\n       3 = Klemp-Wilhelmson time-splitting, vertically implicit:  uses K-W\n                              split time steps for acoustic modes, with a\n                              vetically implicit solver, and horizontally\n                              explicit calculations (as in MM5, ARPS, WRF).\n                              (use if dz is much smaller than dx,dy)\n       4 = Anelastic solver:  Uses the anelastic mass continuity equation.\n                              Pressure is retrieved diagnostically.\n       5 = Incomprssible solver:  Uses the incompressible mass continuity\n                              equation.  Pressure is retrieved diagnostically.\n\n       6 = compressible Boussinesq:  compressible equation set, using KW time\n                              splitting, fully explicit (like psolver=2), but\n                              Boussinesq approx made for pressure-gradient\n                              terms in velocity equations.  Useful for certain\n                              types of idealized modeling.\n                              (see, eg, Bryan and Rotunno, 2014, JAS, pg 1126)\n\n       7 = modified compressible equations:  from Klemp and Wilhelmson (1978)\n                              but with modified value of csound.  Efficient for\n                              simulations with low wind speeds (<10 m/s).\n\n       NOTE:  since cm1r19, users no longer need to set the \"nsound\" parameter\n              for psolver=2,3,6,7"
+ },
+ "ptype": {
+  "section": "param2",
+  "readme": 409,
+  "text": " ptype - Explicit moisture scheme:\n\n             0 = no microphysics (vapor only)\n\n             1 = Kessler scheme (water only)\n\n             2 = NASA-Goddard version of LFO scheme\n\n             3 = Thompson scheme\n\n             4 = Gilmore/Straka/Rasmussen version of LFO scheme\n\n   (default) 5 = Morrison double-moment scheme\n\n             6 = Rotunno-Emanuel (1987) simple water-only scheme\n\n            (Note: options 26,27,28 use namelist nssl2mom_params, see below)\n             26 = NSSL 2-moment scheme (graupel-only, no hail);\n                  graupel density predicted\n             27 = NSSL 2-moment scheme (graupel and hail);\n                  graupel and hail densities predicted\n             28 = NSSL single-moment scheme (graupel-only, similar to ptype=4);\n                  fixed graupel density (rho_qh)\n\n                         --- NEW ---\n            (Note: P3 = Predicted Particle Property bulk microphysics scheme)\n             50 = P3 1-ice category, 1-moment cloud water\n             51 = P3 1-ice category plus double-moment cloud water\n             52 = P3 2-ice categories plus double-moment cloud water\n\n                         --- NEW ---\n             55 = Jensen's ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution)"
+ },
+ "ihail": {
+  "section": "param2",
+  "readme": 442,
+  "text": " ihail - Use hail or graupel for large ice category when ptype=2,5.\n          (Goddard-LFO and Morrison schemes only)\n             1 = hail\n             0 = graupel"
+ },
+ "iautoc": {
+  "section": "param2",
+  "readme": 447,
+  "text": " iautoc - Include autoconversion of qc to qr when ptype = 2?  (0=no, 1=yes)\n            (Goddard-LFO scheme only)"
+ },
+ "icor": {
+  "section": "param2",
+  "readme": 450,
+  "text": " icor - Include Coriolis acceleration?  (0=no,  1=yes)\n        (If user chooses 1, then fcor must be set below)\n        f-plane is assumed.\n\n    NOTE: if icor=1, consider including a large-scale pressure gradient\n          acceleration term (see lspgrad below)"
+ },
+ "lspgrad": {
+  "section": "param2",
+  "readme": 457,
+  "text": " lspgrad - Apply large-scale pressure gradient acceleration to u and v\n           components of velocity.\n        0 = no\n        1 = yes, based on geostropic balance using base-state wind profiles\n          (note:  lspgrad = 1 was called \"pertcor\" in earlier versions of cm1)\n        2 = yes, based on geostropic balance using ug,vg arrays\n        3 = yes, based on gradient-wind balance (Bryan et al 2017, BLM)\n                  --- NEW ---\n        4 = yes, specified values (set ulspg, vlspg in base.F)"
+ },
+ "eqtset": {
+  "section": "param2",
+  "readme": 467,
+  "text": " eqtset - equation set for moist microphysics:\n        1 = a traditional (approximate) equation set for cloud models\n        2 = an energy-conserving equation set that accounts for the\n            heat capacity of hydrometeors (Bryan and Fritsch 2002)\n            that also conserves mass\n\n           (note:  value is ignored if imoist = 0, because the\n            equations are equivalent in a dry environment)\n\n           (not available with ptype=4)"
+ },
+ "idiss": {
+  "section": "param2",
+  "readme": 478,
+  "text": " idiss - Include dissipative heating?  (0=no,  1=yes)"
+ },
+ "efall": {
+  "section": "param2",
+  "readme": 480,
+  "text": " efall - Include energy fallout term?  (0=no,  1=yes)"
+ },
+ "rterm": {
+  "section": "param2",
+  "readme": 482,
+  "text": " rterm - Include simple relaxation term that mimics atmospheric radiation?\n            (0=no,  1=yes)\n         (Note:  this is a very simple approach, and is only recommended\n          for highly idealized model simulations.  See Rotunno and Emanuel\n          1987, JAS, p. 546 for a description of this term.)"
+ },
+ "wbc": {
+  "section": "param2",
+  "readme": 488,
+  "text": " wbc - West lateral boundary condition."
+ },
+ "ebc": {
+  "section": "param2",
+  "readme": 490,
+  "text": " ebc - East lateral boundary condition."
+ },
+ "sbc": {
+  "section": "param2",
+  "readme": 492,
+  "text": " sbc - South lateral boundary condition."
+ },
+ "nbc": {
+  "section": "param2",
+  "readme": 494,
+  "text": " nbc - North lateral boundary condition.\n\n                        where:  1 = periodic\n                                2 = open-radiative\n                                3 = rigid walls, free slip\n                                4 = rigid walls, no slip"
+ },
+ "bbc": {
+  "section": "param2",
+  "readme": 501,
+  "text": " bbc - bottom boundary condition for winds\n\n                        where:  1 = free slip\n                                2 = no slip\n                                3 = semi-slip (i.e., partial slip)\n   (NOTE: for bbc=3, user must also set some options in param12 section below)\n          [see variables that mention \"bbc=3\" below]"
+ },
+ "tbc": {
+  "section": "param2",
+  "readme": 510,
+  "text": " tbc - top boundary condition for winds\n\n                        where:  1 = free slip\n                                2 = no slip\n                  --- NEW ---   3 = semi-slip (i.e., partial slip)\n                    (note: tbc=3 requires sfcmodel=1, and uses cnst_znt)"
+ },
+ "irbc": {
+  "section": "param2",
+  "readme": 517,
+  "text": " irbc - For bc=2, this is the type of radiative scheme to use:\n                    1 = Klemp-Wilhelmson (1978) on large steps\n                    2 = Klemp-Wilhelmson (1978) on small steps\n                    4 = Durran-Klemp (1983) formulation"
+ },
+ "roflux": {
+  "section": "param2",
+  "readme": 522,
+  "text": " roflux - Restrict outward flux?  (0=no, 1=yes)\n\n       When this option is activated, the total outward mass flux at open\n       boundary conditions is not allowed to exceed total inward mass flux.\n       This is a requirement for the anelastic solver.  For the compressible\n       solvers, this scheme helps prevent runaway outward mass flux that can\n       cause domain-total mass loss and pressure falls."
+ },
+ "nudgeobc": {
+  "section": "param2",
+  "readme": 530,
+  "text": " nudgeobc - Nudge winds at inflow boundaries when using open boundary\n            conditions?    (0=no, 1=yes)\n\n       When using open-radiative lateral boundary conditions, this option\n       nudges the horizontal winds toward the base-state fields where there\n       is inflow.  This option is useful for maintaining an inflowing wind\n       profile in long simulations.  (User must set the variable alphobc;\n       see below)."
+ },
+ "isnd": {
+  "section": "param2",
+  "readme": 539,
+  "text": " isnd - Base-state sounding:  1 = Dry adiabatic\n                              2 = Dry isothermal\n                              3 = Dry, constant dT/dz\n   [some variables can be     4 = Saturated neutrally stable (BF02 sounding)\n    set in base.F file]       5 = Weisman-Klemp analytic sounding\n                              7 = External file (named 'input_sounding')\n                                  (see isnd=7 section of base.F for info)\n                                  (some soundings are available at\n                                   http://www2.mmm.ucar.edu/people/bryan/cm1)\n                              8 = Dry, constant d(theta)/dz\n                              9 = Dry, constant Brunt-Vaisala frequency\n                             10 = Saturated, constant Brunt-Vaisala frequency\n                             11 = Saturated, constant equiv. pot. temp.\n                             12 = Dry, adiabatic near surface, constant\n                                  lapse rate above\n                             13 = Dry, three different layers having constant\n                                  N^2 (squared Brunt-Vaisala frequency)\n                             14 = Dry, profile for Convective Boundary Layer\n                                  test case.\n                             15 = Moist, analytic, based on DYCOMS-II,\n                                  used for stratocumulus test cases.\n                             17 = Same as isnd=7, but wind profiles are neglected.\n                                  User must set wind profile using the 'iwnd' option.\n                                  External file named 'input_sounding' is used,\n                                  although columns 4-5 are ignored.\n                                  (see isnd=7 section of base.F for more info)\n                                  (some soundings are available at\n                                   http://www2.mmm.ucar.edu/people/bryan/cm1)\n                             18 = Dry, sharp inversion in middle of profile,\n                                  used for sheared boundary layer test case.\n                             19 = Moist analytic profiles based on BOMEX,\n                                  used for shallow cumulus test case\n                             20 = Moist analytic profiles based on RICO,\n                                  used for precipitating shallow cumulus test case\n                             22 = Initial sounding for stable boundary-layer\n                                  test case (testcase=9)."
+ },
+ "iwnd": {
+  "section": "param2",
+  "readme": 576,
+  "text": " iwnd - Base-state wind profile:  (ignored if isnd=7)\n                                  0 = zero winds\n    [additional variables         1 = RKW-type profile\n     need to be set in            2 = Weisman-Klemp supercell\n     base.F file]                 3 = multicell\n                                  4 = Weisman-Klemp multicell\n                                  5 = Dornbrack etal analytic profile\n                                  6 = constant wind\n                                  8 = linearly decreasing wind profile, used\n                                      for simple hurricane boundary layer case\n                                  9 = linear wind profiles used for shallow\n                                      cumulus test case\n                                  10 = linear wind profiles used for drizzling\n                                       stratocumulus test case\n                                  11 = wind profiles used for RICO precipitating\n                                       shallow cumulus case"
+ },
+ "itern": {
+  "section": "param2",
+  "readme": 593,
+  "text": " itern - Initial topography specifications.\n         User must also set zs array in init_terrain.F:\n                    0 = no terrain (zs=0)\n                    1 = bell-shaped hill\n                    2 = Schaer test case\n                    3 = (case from T. Lane and J. Doyle)\n                    4 = specified in external GrADS file"
+ },
+ "iinit": {
+  "section": "param2",
+  "readme": 601,
+  "text": " iinit - 3D initialization option:  0 = no perturbation\n                                    1 = warm bubble\n                                    2 = cold pool\n    [additional variables           3 = line of warm bubbles\n     need to be set in              4 = initialization for moist benchmark\n     init3d.F file]                 5 = cold blob\n                                    7 = Rotunno-Emanuel tropical cyclone\n    See relevant code in            8 = line thermal with random perturbations\n    init3d.F file for               9 = forced convergence (Loftus et al 2008)\n    more details.                  10 = momentum forcing (Morrison et al 2015)\n                                   11 = Skamarock-Klemp IG wave perturbation\n                                   12 = updraft nudging (Naylor and Gilmore 2012)"
+ },
+ "irandp": {
+  "section": "param2",
+  "readme": 614,
+  "text": " irandp - Include random potential temperature perturbations in the\n          initial conditions?\n             (0=no,  1=yes)\n          (set magnitude of perturbations in init3d.F)"
+ },
+ "ibalance": {
+  "section": "param2",
+  "readme": 619,
+  "text": " ibalance - Specified balance assumption for initial 3D pressure field\n            (ignored if iinit=7)\n\n          0 = no balance (initial pressure perturbation is zero everywhere,\n                          except for iinit=7)\n          1 = hydrostatic balance (appropriate for small aspect ratios)\n          2 = anelastic balance (initial pressure perturbation is the\n              buoyancy pressure perturbation field for an anelastic\n              atmosphere).  (Does not currently work with MPI setup.)"
+ },
+ "iorigin": {
+  "section": "param2",
+  "readme": 629,
+  "text": " iorigin - Specifies location of the origin in horizontal space\n\n          1 = At the bottom-left corner of the domain\n              (x goes from 0 km to nx*dx km)\n              (y goes from 0 km to ny*dy km)\n          2 = At the center of the domain\n              (x goes from -nx*dx/2 km to +nx*dx/2 km)\n              (y goes from -ny*dy/2 km to +ny*dy/2 km)"
+ },
+ "axisymm": {
+  "section": "param2",
+  "readme": 638,
+  "text": " axisymm - Run axisymmetric version of model  (0=no,  1=yes)\n\n        (for axisymm=1, ny must be 1, wbc must be 3, and sbc,nbc must be 1)\n\n        (see README.axisymm for more information)"
+ },
+ "imove": {
+  "section": "param2",
+  "readme": 644,
+  "text": " imove - Move domain at constant speed (0=no, 1=yes)\n\n           For imove=1, user must set umove and vmove."
+ },
+ "iptra": {
+  "section": "param2",
+  "readme": 648,
+  "text": " iptra - Integrate passive fluid tracer? (0=no, 1=yes)\n\n           User must initialize \"pta\" array in init3d.F."
+ },
+ "npt": {
+  "section": "param2",
+  "readme": 652,
+  "text": " npt - Total number of passive fluid tracers."
+ },
+ "pdtra": {
+  "section": "param2",
+  "readme": 654,
+  "text": " pdtra - Ensure positive-definiteness for tracers?  (0=no, 1=yes)"
+ },
+ "iprcl": {
+  "section": "param2",
+  "readme": 656,
+  "text": " iprcl - Integrate passive parcels? (0=no, 1=yes)\n\n           User must initialize \"pdata\" array in init3d.F."
+ },
+ "nparcels": {
+  "section": "param2",
+  "readme": 660,
+  "text": " nparcels - Total number of parcels."
+ },
+ "kdiff2": {
+  "section": "param3",
+  "readme": 665,
+  "text": " kdiff2 - Diffusion coefficient for difforder=2.  Specified in m^2/s."
+ },
+ "kdiff6": {
+  "section": "param3",
+  "readme": 667,
+  "text": " kdiff6 - Diffusion coefficient for difforder=6.  Specified as a\n          fraction of one-dimensional stability.  A value between\n          0.02-0.24 is recommended."
+ },
+ "fcor": {
+  "section": "param3",
+  "readme": 671,
+  "text": " fcor - Coriolis parameter (1/s)."
+ },
+ "kdiv": {
+  "section": "param3",
+  "readme": 673,
+  "text": " kdiv - Coefficient for divergence damper.  Value of ~0.1 is recommended.\n\n        This is only used when psolver=2,3.  (The divergence damper is\n        an artificial term designed to damp acoustic waves.)"
+ },
+ "alph": {
+  "section": "param3",
+  "readme": 678,
+  "text": " alph - Off-centering coefficient for vertically implicit acoustic\n        solver.  A value of 0.5 is centered-in-time.  Slight forward-in-time\n        bias is recommended.  Default value is 0.60.\n        (only used for psolver=3)"
+ },
+ "rdalpha": {
+  "section": "param3",
+  "readme": 683,
+  "text": " rdalpha - Inverse e-folding time for upper-level Rayleigh damping layer\n           (1/s).  Value of about 1/300 is recommended."
+ },
+ "zd": {
+  "section": "param3",
+  "readme": 686,
+  "text": " zd - Height above which Rayleigh damping is applied (m).\n      (when irdamp = 1)"
+ },
+ "xhd": {
+  "section": "param3",
+  "readme": 689,
+  "text": " xhd - Distance from lateral boundaries where Rayleigh damping is applied (m).\n       (when hrdamp = 1)"
+ },
+ "alphobc": {
+  "section": "param3",
+  "readme": 692,
+  "text": " alphobc - Time scale (s) of nudging tendency when using the nudgeobc option."
+ },
+ "umove": {
+  "section": "param3",
+  "readme": 694,
+  "text": " umove - Constant speed for domain translation in x-direction (m/s)\n         (for imove = 1)\n         (NOTE: for imove=1 and umove not equal to 0.0, ground-relative winds\n          are umove+ua, umove+u3d, etc)"
+ },
+ "vmove": {
+  "section": "param3",
+  "readme": 699,
+  "text": " vmove - Constant speed for domain translation in y-direction (m/s)\n         (for imove = 1)\n         (NOTE: for imove=1 and vmove not equal to 0.0, ground-relative winds\n          are vmove+va, vmove+v3d, etc)"
+ },
+ "v_t": {
+  "section": "param3",
+  "readme": 704,
+  "text": " v_t - Constant terminal fall velocity of liquid water (m/s) when ptype=6\n\n         When v_t is negative, all liquid water above a small threshold is\n         removed from the domain, ie, pseudoadiabatic thermodynamics are\n         used, following Bryan and Rotunno (2009, JAS, pg 3042)."
+ },
+ "l_h": {
+  "section": "param3",
+  "readme": 710,
+  "text": " l_h - Horizontal turbulence length scale (m) used when horizturb=1\n        (ie, 2D Smagorinsky)\n            Since cm1r18, this is used OVER LAND ONLY\n            (see lhref1,lhref2 for settings OVER OCEAN)"
+ },
+ "lhref1": {
+  "section": "param3",
+  "readme": 715,
+  "text": " lhref1 - a reference value of l_h (m):  value for surface pressure of 1015 mb"
+ },
+ "lhref2": {
+  "section": "param3",
+  "readme": 716,
+  "text": " lhref2 - a reference value of l_h (m):  value for surface pressure of  900 mb\n\n    notes:  - Since cm1r18, the horizontal turbulence length scale for\n              horizturb=1 is a function of surface pressure\n              (over the OCEAN ONLY).\n            - This is based on studies of hurricanes (eg, Bryan 2012, MWR).\n            - lhref1 and lhref2 define a linear formulation for horizontal\n              turbulence length over the ocean for horizturb=1.\n            - For gridpoints over land, l_h (above) is used for horizturb=1.\n            - For water points above sea level (e.g., lakes) l_h is used."
+ },
+ "l_inf": {
+  "section": "param3",
+  "readme": 727,
+  "text": " l_inf - Asymptotic vertical turbulence length scale (m) (i.e., vertical\n         length scale at z = infinity) used for ipbl=2 (simple parameterized\n         turbulence / boundary layer scheme)"
+ },
+ "ndcnst": {
+  "section": "param3",
+  "readme": 731,
+  "text": " ndcnst - specified cloud droplet concentration for default version of\n          Morrison microphysics scheme (units of cm-3)\n\n              Note: typical value for maritime environments:  100 cm-3\n                    typical value for continental environments:  300 cm-3"
+ },
+ "stretch_x": {
+  "section": "param4",
+  "readme": 1004,
+  "text": " stretch_x - Use horizontally stretched grid in x?\n                0 = no\n                1 = yes, stretching on both west and east sides of domain\n                2 = yes, stretching on west side of domain only\n                3 = Arbitrary, specified by user in input_grid_x file\n                   (note: options below are ignored for stretch_x = 3)"
+ },
+ "dx_inner": {
+  "section": "param4",
+  "readme": 1011,
+  "text": " dx_inner - Smallest grid spacing (m)."
+ },
+ "dx_outer": {
+  "section": "param4",
+  "readme": 1013,
+  "text": " dx_outer - Largest grid spacing, at edge of domain (m)."
+ },
+ "nos_x_len": {
+  "section": "param4",
+  "readme": 1015,
+  "text": " nos_x_len - Length of the no-stretching part of domain (m)."
+ },
+ "tot_x_len": {
+  "section": "param4",
+  "readme": 1017,
+  "text": " tot_x_len - Total length of the domain (m)."
+ },
+ "stretch_y": {
+  "section": "param5",
+  "readme": 1024,
+  "text": " stretch_y - Use horizontally stretched grid in y?\n                0 = no\n                1 = yes, stretching on both south and north sides of domain\n                2 = yes, stretching on south side of domain only\n                3 = Arbitrary, specified by user in input_grid_y file\n                   (note: options below are ignored for stretch_y = 3)"
+ },
+ "dy_inner": {
+  "section": "param5",
+  "readme": 1031,
+  "text": " dy_inner - Smallest grid spacing (m)."
+ },
+ "dy_outer": {
+  "section": "param5",
+  "readme": 1033,
+  "text": " dy_outer - Largest grid spacing, at edge of domain (m)."
+ },
+ "nos_y_len": {
+  "section": "param5",
+  "readme": 1035,
+  "text": " nos_y_len - Length of the no-stretching part of domain (m)."
+ },
+ "tot_y_len": {
+  "section": "param5",
+  "readme": 1037,
+  "text": " tot_y_len - Total length of the domain (m)."
+ },
+ "stretch_z": {
+  "section": "param6",
+  "readme": 1044,
+  "text": " stretch_z - Use vertically stretched grid spacing?\n               0 = no\n               1 = Wilhelmson and Chen\n               2 = Smooth geometric\n               3 = Arbitrary, specified by user in input_grid_z file.\n                   Note: this option specifies the heights of scalar\n                   levels (also known as \"half levels\").\n                   For example:  0.5*dz , 1.5*dz , 2.5*dz , etc.\n                   Total number of levels specified in file is nz.\n                   See run/config_files/les_StratoCuDrizzle/input_grid_z\n                   for an example.\n                   (note: options below are ignored for stretch_z = 3)\n               4 = Arbitrary, specified by user in input_grid_z file.\n                   Note: this option specifies the heights of w levels\n                   (also known as \"full levels\").\n                   For example:  0.0*dz , 1.0*dz , 2.0*dz , 3.0*dz , etc.\n                   Total number of levels specified in file is nz+1.\n                   (note: options below are ignored for stretch_z = 4)"
+ },
+ "ztop": {
+  "section": "param6",
+  "readme": 1063,
+  "text": " ztop - Total depth of the domain (i.e., the height of the top of the\n        domain) (m)."
+ },
+ "str_bot": {
+  "section": "param6",
+  "readme": 1066,
+  "text": " str_bot - Level where stretching begins (m)."
+ },
+ "str_top": {
+  "section": "param6",
+  "readme": 1068,
+  "text": " str_top - Level where stretching ends (m).  (not used for stretch_z = 2)"
+ },
+ "dz_bot": {
+  "section": "param6",
+  "readme": 1070,
+  "text": " dz_bot - Grid spacing at (and below) str_bot (m)."
+ },
+ "dz_top": {
+  "section": "param6",
+  "readme": 1072,
+  "text": " dz_top - Grid spacing at (and above) str_top (m)."
+ },
+ "isfcflx": {
+  "section": "param12",
+  "readme": 821,
+  "text": " isfcflx - Include surface fluxes of heat and moisture (0=no, 1=yes)"
+ },
+ "sfcmodel": {
+  "section": "param12",
+  "readme": 823,
+  "text": " sfcmodel - Surface model:\n     (Specifically, method to calculate surface fluxes and surface stress\n      over land and water)\n     (NOTE:  bbc=3 requires sfcmodel >= 1 )\n     (NOTE:  set_znt=1, or set_ust=1, or set_flx=1 requires sfcmodel = 1)\n\n      List (see more info below):\n\n            1 = original CM1 formulation\n\n            2 = surface-layer scheme from WRF model (details below)\n\n            3 = 'revised' surface-layer scheme from WRF model (details below)\n\n                --- NEW for cm1r19.9 ---\n            4 = GFDL surface layer  (as configured in HWRF_v4.0a)\n\n                --- NEW for cm1r19.9 ---\n            5 = simple Monin-Obukhov Similarity Theory (MOST) for LES\n\n                --- NEW for cm1r19.10 ---\n            6 = MYNN surface layer\n\n                --- NEW for cm1r20.1 ---\n            7 = MYJ surface layer\n\n      Further information:\n\n        - sfcmodel=1 : Uses simple formulations wherein surface exchange\n        coefficients are specified:  see \"Options for sfcmodel = 1\" section\n        below.  For diagnostic surface layer calculations (such as 10-m winds),\n        a neutrally stratified surface layer is assumed.\n        Notes:  - surface temperature remains fixed over time\n                - surface moisture availability remains fixed over time\n                - sfcmodel=1 requires oceanmodel=1\n\n        - sfcmodel=2 : Uses the MM5/WRF similarity theory code for the surface\n        layer:  based on Monin-Obukhov with Carslon-Boland viscous sub-layer\n        and standard similarity functions from look-up tables.\n        (\"sf_sfclay_physics = 1\" in WRF)\n        See also \"Options for sfcmodel = 2\" section below.\n        The soil model is the \"Thermal diffusion\" model from MM5/WRF:  it\n        updates soil temperature only ... soil moisture availability is held\n        fixed over time.  (Same as \"sf_surface_physics = 1\" in WRF)\n        Notes:  - sfcmodel=2 can be used with either oceanmodel=1,2\n\n        - sfcmodel=3 : A revised version of sfcmodel=2.  See Jimenez et al\n        (2012, MWR, pg 898) for more details.\n        Notes:  - sfcmodel=3 can be used with either oceanmodel=1,2\n\n                --- NEW for cm1r19.9 ---\n        - sfcmodel=4 : GFDL surface layer, as configured in HWRF_v4.0a\n\n                --- NEW for cm1r19.9 ---\n        - sfcmodel=5 : A relatively simple implementation of Monin-Obukhov\n          Similarity Theory (MOST).  Requires: a) dry (imoist=0), b) specified\n          surface roughness length (set_znt=1), c) z0t = z0 (thermal roughness\n          length is same as momentum roughness length); d) no terrain;\n          e) either surface temperature (tsk) is known, or thflux must be\n          specified (as in testcase=1)."
+ },
+ "radopt": {
+  "section": "param11",
+  "readme": 743,
+  "text": " radopt  -  Use atmospheric radiation code?\n\n               0 = no\n               1 = yes, use the NASA-Goddard scheme\n               2 = yes, use the RRTMG scheme\n\n       Note:  the NASA-Goddard longwave and shortwave radiation codes\n       were adapted from the ARPS model, courtesy of the ARPS/CAPS group\n       at the University of Oklahoma.\n\n       Note:  the RRTMG code was adapted from the WRF model.\n\n       (Note:  TIPA option is not implemented in this version of CM1)"
+ },
+ "dtrad": {
+  "section": "param11",
+  "readme": 780,
+  "text": " dtrad   -  Time increment (seconds) between calculation of radiation\n            tendency.  (Radiative tendencies are held fixed in-between\n            calls to the atmospheric radiation subroutine.)"
+ },
+ "ctrlat": {
+  "section": "param11",
+  "readme": 784,
+  "text": " ctrlat  -  Latitude (applies to entire domain, for now)"
+ },
+ "ctrlon": {
+  "section": "param11",
+  "readme": 786,
+  "text": " ctrlon  -  Longitude (applies to entire domain, for now)\n\n     NOTE:  because ctrlat and ctrlon are fixed (for now) the radiation\n            scheme is only appropriate for domains having horizontal\n            extent of order 100--1000 km or less\n\n     (FAQ:  Why are lat and lon fixed across the entire domain?\n      It's because George doesn't have time, at the moment, to deal with\n      map projections in CM1.)"
+ },
+ "year": {
+  "section": "param11",
+  "readme": 796,
+  "text": " year    -  Year (integer) at start of simulation"
+ },
+ "month": {
+  "section": "param11",
+  "readme": 798,
+  "text": " month   -  Month (integer) at start of simulation"
+ },
+ "day": {
+  "section": "param11",
+  "readme": 800,
+  "text": " day     -  Day (integer) at start of simulation"
+ },
+ "hour": {
+  "section": "param11",
+  "readme": 802,
+  "text": " hour    -  Hour (integer) at start of simulation"
+ },
+ "minute": {
+  "section": "param11",
+  "readme": 804,
+  "text": " minute  -  Minute (integer) at start of simulation"
+ },
+ "second": {
+  "section": "param11",
+  "readme": 806,
+  "text": " second  -  Second (integer) at start of simulation\n\n        Yet Another Note:  the radiation schemes uses three important\n        pieces of information from the surface section (param12) below:\n        surface temperature, land/water flag, and land-use type.\n        Make sure you have the desired settings for your simulation below\n        (even if you are not using surface fluxes!)."
+ },
+ "oceanmodel": {
+  "section": "param12",
+  "readme": 891,
+  "text": " oceanmodel - Model for ocean/water surface:\n\n            1 = fixed sea-surface temperature\n            2 = ocean mixed layer model\n                (Same as \"omlcall = 1\" in WRF)\n                (Note:  oceanmodel=2 requires sfcmodel=2,3)\n                Ref:  Pollard et al, 1973, Geophys. Fluid Dyn., 3, 381-404."
+ },
+ "initsfc": {
+  "section": "param12",
+  "readme": 902,
+  "text": " initsfc - initial surface conditions:\n              1 = constant values  (set tsk0,tmn0,xland0,lu0 below)\n              2 = sea breeze test case from WRF\n\n              for any other value:  you must initialize the surface conditions\n              yourself in the \"init_surface.F\" file."
+ },
+ "tsk0": {
+  "section": "param12",
+  "readme": 909,
+  "text": " tsk0 - default initial value for \"skin temperature\" (K) of soil/water\n        (~1 cm deep)\n        NOTE:  this replaces sea surface temperature (tsurf) in cm1r15"
+ },
+ "tmn0": {
+  "section": "param12",
+  "readme": 913,
+  "text": " tmn0 - default initial value for deep-layer temperature (K) of soil\n        (Note:  remains fixed throughout simulation)\n        (only used if sfcmodel=2)\n        (only used over land ... ignored over water)"
+ },
+ "xland0": {
+  "section": "param12",
+  "readme": 918,
+  "text": " xland0 - default initial value for land/water flag:\n             1 for land,   2 for water"
+ },
+ "lu0": {
+  "section": "param12",
+  "readme": 921,
+  "text": " lu0 - default initial value for land-use index   (see LANDUSE.TBL file)\n        (NOTE:  for water/ocean, use lu0 = 16)"
+ },
+ "season": {
+  "section": "param12",
+  "readme": 924,
+  "text": " season - which set of land-use conditions to use from LANDUSE.TBL file:\n            1 = summer values\n            2 = winter values\n\n    c-------------------------------------------------------------c\n     To reiterate:  if you want to use spatially varying values of\n     tsk,tmn,xland,lu then you must code it up yourself in the\n     \"init_surface.F\" file.\n    c-------------------------------------------------------------c"
+ },
+ "cecd": {
+  "section": "param12",
+  "readme": 937,
+  "text": " cecd - When bbc=3 and/or isfcflx=1, this allows the user to choose the\n        formulation for the surface exchange coefficients for enthalphy (Ce)\n        and momentum (Cd).  Options are:\n                1 = constant value:  user must set cnstce and/or cnstcd below\n                    (applies to land and water)\n                2 = Deacon's formula  [eg, Rotunno and Emanuel (1987, JAS)]\n                    (over water only)\n                    (WRF LANDUSE.TBL used over land)\n       default: 3 = Cd based roughly on Fairall et al (2003) at low wind speeds\n                                    and Donelan (2004, GRL) at high wind speeds\n                    Ce constant, based on Drennan et al. (2007, JAS)\n                    (over water only)\n                    (WRF LANDUSE.TBL used over land)"
+ },
+ "pertflx": {
+  "section": "param12",
+  "readme": 951,
+  "text": " pertflx - Use only perturbation winds for calculation of surface fluxes?\n             (0=NO,  1=yes)\n           (Only available with sfcmodel=1)"
+ },
+ "cnstce": {
+  "section": "param12",
+  "readme": 955,
+  "text": " cnstce - Constant value of Ce (surface exchange coefficient for enthalpy)\n          if isfcflx=1 and cecd=1"
+ },
+ "cnstcd": {
+  "section": "param12",
+  "readme": 958,
+  "text": " cnstcd - Constant value of Cd (surface exchange coefficient for momentum)\n          if bbc=3 and cecd=1"
+ },
+ "isftcflx": {
+  "section": "param12",
+  "readme": 964,
+  "text": " isftcflx - Use alternative Ck and Cd for tropical storm applications:\n              (0=off) (For Cd: 1,2 = Donelan)\n                      (For Ce: 1=constant Z0q, 2=Garratt)\n            MYNN has other options: see module_sf_mynn.F for details\n            (Cannot be used with sfcmodel=1,4,5)"
+ },
+ "iz0tlnd": {
+  "section": "param12",
+  "readme": 970,
+  "text": " iz0tlnd  - When using sfcmodel=2, option for thermal roughness length:\n                 0 = Carlson-Boland  (original mm5/wrf version)\n                 1 = Czil_new        (depends on vegetation height)"
+ },
+ "oml_hml0": {
+  "section": "param12",
+  "readme": 977,
+  "text": " oml_hml0  - default ocean mixed layer depth (m) at initial time"
+ },
+ "oml_gamma": {
+  "section": "param12",
+  "readme": 979,
+  "text": " oml_gamma - default deep water lapse rate (K m-1)"
+ },
+ "set_flx": {
+  "section": "param12",
+  "readme": 984,
+  "text": " set_flx - impose constant surface heat fluxes  (0=no, 1=yes)"
+ },
+ "cnst_shflx": {
+  "section": "param12",
+  "readme": 986,
+  "text": " cnst_shflx  - value for surface sensible heat flux (K m/s) if set_flx=1"
+ },
+ "cnst_lhflx": {
+  "section": "param12",
+  "readme": 988,
+  "text": " cnst_lhflx - value for surface latent heat flux (g/g m/s) if set_flx=1"
+ },
+ "set_znt": {
+  "section": "param12",
+  "readme": 990,
+  "text": " set_znt - impose constant surface roughness length  (0=no, 1=yes)"
+ },
+ "cnst_znt": {
+  "section": "param12",
+  "readme": 992,
+  "text": " cnst_znt - value of surface roughness length (z0, meters) if set_znt=1"
+ },
+ "set_ust": {
+  "section": "param12",
+  "readme": 994,
+  "text": " set_ust - impose constant surface friction velocity (0=no, 1=yes)"
+ },
+ "cnst_ust": {
+  "section": "param12",
+  "readme": 996,
+  "text": " cnst_ust - value of surface friction velocity (u-star, m/s) if set_ust=1"
+ },
+ "bc_temp": {
+  "section": "param7",
+  "readme": 1078,
+  "text": " bc_temp - top/bottom boundary condition for potential temperature\n\n             1 = constant theta is specified at boundaries\n             2 = constant flux is specified at boundaries"
+ },
+ "ptc_top": {
+  "section": "param7",
+  "readme": 1083,
+  "text": " ptc_top - potential temperature closure for top of model\n\n        if bc_temp = 1, this is theta at the top boundary (K)\n        if bc_temp = 2, this is the flux at the top boundary (K m/s)"
+ },
+ "ptc_bot": {
+  "section": "param7",
+  "readme": 1088,
+  "text": " ptc_bot - potential temperature closure for bottom of model\n\n        if bc_temp = 1, this is theta at the bottom boundary (K)\n        if bc_temp = 2, this is the flux at the bottom boundary (K m/s)"
+ },
+ "viscosity": {
+  "section": "param7",
+  "readme": 1093,
+  "text": " viscosity - value for kinematic viscosity (m^2/s)"
+ },
+ "pr_num": {
+  "section": "param7",
+  "readme": 1095,
+  "text": " pr_num - value for Prandtl number (unitless)"
+ },
+ "sc_num": {
+  "section": "param7",
+  "readme": 1097,
+  "text": " sc_num - value for Schmidt number (unitless)"
+ },
+ "dodomaindiag": {
+  "section": "param14",
+  "readme": 1635,
+  "text": "  dodomaindiag - Calculate and write domain-wide / domain-averaged diagnostics\n               (eg, domain-average vertical profiles, variances, vertical\n                fluxes, etc)\n              (logical:  .true. or .false.)\n\n       --- NEW ---   Can now be written in CF-compliant netcdf format!\n                     Use output_format = 2"
+ },
+ "diagfrq": {
+  "section": "param14",
+  "readme": 1643,
+  "text": "  diagfrq - Frequency (seconds) for calculating/writing diagnostics."
+ },
+ "doazimavg": {
+  "section": "param15",
+  "readme": 1651,
+  "text": "  doazimavg  -  Calculate and write azimuthally averaged vertical cross\n                sections?\n                (logical:  .true. or .false.)\n\n        --- NEW ---   Can now be written in CF-compliant netcdf format!\n                      Use output_format = 2\n\n      Note:  To define the center-point for these calculatins, there is\n             only one option, at the moment:  the code searches for the\n             point that yields maximum possible azimuthally averaged\n             tangential velocity, and defines this point as \"storm center.\"\n             Other mehtods could be coded in the future"
+ },
+ "azimavgfrq": {
+  "section": "param15",
+  "readme": 1664,
+  "text": "  azimavgfrq  -  Time between writes to azimavg files (s)."
+ },
+ "rlen": {
+  "section": "param15",
+  "readme": 1666,
+  "text": "  rlen  -  Length (m) of analysis grid (in radial direction).\n\n                       --- NEW ---"
+ },
+ "do_adapt_move": {
+  "section": "param15",
+  "readme": 1669,
+  "text": "  do_adapt_move  -  Automatically identify center of a storm (using min\n           surface pressure), and adaptively adjust umove,vmove to keep\n           the storm near the center of the domain.\n\n           Caution: this is an experimental capability in CM1\n           (although it seems to work well in our tests)."
+ },
+ "adapt_move_frq": {
+  "section": "param15",
+  "readme": 1676,
+  "text": "  adapt_move_frq  -  Frequency (seconds) to identify center of storm,\n           and update umove,vmove (when do_adapt_move = .true.)"
+ }
+}
