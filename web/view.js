@@ -284,8 +284,15 @@ function gridInfo(sc) {
 }
 let kdir = '../data/kernels/';
 
+// нет WebGPU: экран с тем, что сделать на этом устройстве (nogpu.js)
+async function noGpu() {
+  post('');
+  const { showNoGpu } = await import('./nogpu.js?v=' + Date.now());
+  showNoGpu();
+}
+
 async function init() {
-  if (!navigator.gpu) { post('WebGPU недоступен в этом браузере'); return; }
+  if (!navigator.gpu) { await noGpu(); return; }
   post('загрузка');
   index = await (await get('../data/index.json')).json();
   const P = await import('./presets.js?v=' + Date.now());
@@ -330,7 +337,7 @@ async function init() {
   setupGeo();
   const adapter = await navigator.gpu.requestAdapter();
   // WebGPU объявлен, но видеокарта не выдана (Android вне Chrome 121+/Android 12+, чёрный список драйверов)
-  if (!adapter) { post('браузер не дал доступ к видеокарте (WebGPU): на Android откройте сайт в Chrome, на компьютере - в Chrome, Edge или Safari'); return; }
+  if (!adapter) { await noGpu(); return; }
   device = await adapter.requestDevice({ requiredLimits: {
     maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
   device.addEventListener('uncapturederror', e => dbg('ОШИБКА GPU ' + e.error.message));

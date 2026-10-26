@@ -704,6 +704,94 @@
 "at": "web/memsplit.js"
 },
 {
+"ru": "Если не помогло: открыть адрес",
+"at": "web/nogpu.js"
+},
+{
+"ru": ", выбрать Enabled и перезапустить браузер.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Открыть сайт в Google Chrome: Яндекс Браузер, Samsung Internet и Firefox на Android WebGPU обычно не дают.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Обновить Chrome через Google Play. Нужен Chrome 121 или новее и Android 12 или новее.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "iPhone и iPad",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Обновить систему до iOS 26 или новее: там WebGPU в Safari включён сам.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "На iOS 18: Настройки - Приложения - Safari - Дополнения - Feature Flags - включить WebGPU.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Chrome и другие браузеры на iPhone работают на движке Safari: им нужно то же самое.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Открыть сайт в Chrome или Edge последней версии (Firefox - с версии 141).",
+"at": "web/nogpu.js"
+},
+{
+"ru": "В настройках браузера (Система) включить «Использовать аппаратное ускорение» и перезапустить браузер.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Обновить драйвер видеокарты с сайта NVIDIA, AMD или Intel.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Открыть",
+"at": "web/nogpu.js"
+},
+{
+"ru": ": в строке WebGPU должно быть Hardware accelerated.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Safari на macOS 26 или новее, либо Chrome последней версии.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Chrome последней версии с включёнными флагами:",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Браузер не даёт доступ к видеокарте",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Гроза считается на видеокарте через WebGPU. Без него сайт работать не может.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Яндекс Браузер WebGPU обычно не даёт: проще открыть сайт в Chrome.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Samsung Internet WebGPU не даёт: откройте сайт в Chrome.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Firefox здесь WebGPU пока не даёт: откройте сайт в Chrome.",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Другие устройства",
+"at": "web/nogpu.js"
+},
+{
+"ru": "Проверить снова",
+"at": "web/nogpu.js"
+},
+{
 "ru": "ссылка не на пресет",
 "at": "web/presets.js"
 },
@@ -988,10 +1076,6 @@
 "at": "web/view.js"
 },
 {
-"ru": "WebGPU недоступен в этом браузере",
-"at": "web/view.js"
-},
-{
 "ru": "загрузка",
 "at": "web/view.js"
 },
@@ -1009,10 +1093,6 @@
 },
 {
 "ru": "нет набора ядер для сочетания",
-"at": "web/view.js"
-},
-{
-"ru": "браузер не дал доступ к видеокарте (WebGPU): на Android откройте сайт в Chrome, на компьютере - в Chrome, Edge или Safari",
 "at": "web/view.js"
 },
 {
