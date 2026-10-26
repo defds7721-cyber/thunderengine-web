@@ -8696,5 +8696,49 @@
     "write": true
    }
   ]
+ },
+ "wnudge_tendency": {
+  "name": "wnudge_tendency",
+  "params": [
+   {
+    "index": 0,
+    "kind": "ref",
+    "name": "g",
+    "write": false
+   },
+   {
+    "index": 1,
+    "kind": "ref",
+    "name": "p",
+    "write": false
+   },
+   {
+    "index": 2,
+    "kind": "ptr",
+    "name": "c2",
+    "write": false
+   },
+   {
+    "index": 3,
+    "kind": "ptr",
+    "name": "w3d",
+    "write": false
+   },
+   {
+    "index": 4,
+    "kind": "ptr",
+    "name": "wten",
+    "write": true
+   },
+   {
+    "index": 5,
+    "kind": "ptr",
+    "name": "wtens",
+    "write": true
+   }
+  ],
+  "rank": 3,
+  "scratch": 0,
+  "atomic": false
  }
 }

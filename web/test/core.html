@@ -25,7 +25,9 @@ try {
   const { buildRun } = await import('../core/driver.js' + v);
   const { ConfigParser, loadSounding } = await import('../core/config.js' + v);
   const ref = await (await get(`../../tape/all/${name}/tape.json`)).json();
-  const conf = ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
+  // ?cfg=путь - свой конфиг (JSON или namelist.input) вместо пресета
+const conf = q.get('cfg') ? ConfigParser.parseText(await (await get(q.get('cfg'))).text())
+  : ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
   const sounding = await loadSounding(name, conf, u => get('../../data/presets/' + u).then(r => r.ok ? r.text() : null));
   const t0 = performance.now();
   const run = buildRun(conf, sounding);

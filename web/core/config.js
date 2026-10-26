@@ -16,6 +16,7 @@ import { HorizontalGrid, VerticalGrid, ThermoConstants, Stretch, roundHalfAway }
 import { BaseState, Sounding, SoundingFactory, WarmBubble, ColdPool, BubbleLine, RotunnoEmanuelVortex, uniformWind } from './base.js';
 import { SupercellScenario, ScenarioRadiation } from './scenario.js';
 import { TerrainGeometry } from './terrain.js';
+import { UpdraftNudging } from './timestep.js';
 
 async function optional(path) {
   try { return await import(path); }
@@ -673,7 +674,15 @@ export const ScenarioBuilder = {
       case 3: sc.perturbation = { kind: 'bubbleLine', bl: new BubbleLine() }; break;
       case 7: sc.perturbation = { kind: 'vortex', vx: new RotunnoEmanuelVortex(c.int('var1') ?? 0) }; break;
       case 8: sc.perturbation = { kind: 'lineThermal', seed: c.int('var1') ?? 0 }; break;
-      default: throw new Error(`iinit = ${iinit} не портирован; есть 1 (тёплый пузырь), 2 (холодный бассейн), 3 (линия пузырей), 7 (вихрь Ротунно–Эмануэля) и 8 (линейный термик со случайными возмущениями)`);
+      // Подталкивание восходящего потока (init3d.F:1437-1459): без возмущения θ
+      case 12: sc.perturbation = { kind: 'none' }; sc.updraftNudging = new UpdraftNudging(); break;
+      default: throw new Error(`iinit = ${iinit} не портирован; есть 1 (тёплый пузырь), 2 (холодный бассейн), 3 (линия пузырей), 7 (вихрь Ротунно–Эмануэля), 8 (линейный термик со случайными возмущениями) и 12 (подталкивание восходящего потока)`);
+    }
+    if (sc.updraftNudging) {
+      // сверено без рельефа, при psolver=3 и в декартовой сетке; прочее - отказ
+      if (c.bool('terrain_flag') === true) throw new Error('iinit = 12 с рельефом не портирован: get_wnudge берёт zf(i,j,k) по столбцам (misclibs.F:524)');
+      if ((c.int('psolver') ?? 3) !== 3) throw new Error(`iinit = 12 портирован для psolver = 3 (sound.F:578-600); у psolver = ${c.int('psolver')} подталкивание в другом месте`);
+      if ((c.int('axisymm') ?? 0) === 1) throw new Error('iinit = 12 в осесимметричной сетке не портирован');
     }
     const cm1setup = c.int('cm1setup') ?? 1;
     const les = cm1setup === 1 && (c.int('sgsmodel') ?? 0) === 1;

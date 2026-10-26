@@ -22,7 +22,9 @@ const C = await import('../core/config.js' + v);
 const { buildRun } = await import('../core/driver.js' + v);
 const { Replayer } = await import('../replay.js' + v);
 const name = q.get('s');
-const conf = C.ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
+// ?cfg=путь - свой конфиг (JSON или namelist.input) вместо пресета
+const conf = q.get('cfg') ? C.ConfigParser.parseText(await (await get(q.get('cfg'))).text())
+  : C.ConfigParser.parse(await (await get(`../../data/presets/${name}.json`)).json());
 const snd = await C.loadSounding(name, conf, f => get('../../data/presets/' + f).then(r => r.ok ? r.text() : null));
 let t0 = performance.now();
 const run = buildRun(conf, snd);
@@ -48,9 +50,28 @@ for (const [i, b] of run.ctx.rec.buffers.entries()) await r.uploadAsync(i, b.u8)
 await device.queue.onSubmittedWorkDone();
 run.releaseArena();
 t0 = performance.now();
-const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+// ?n=N - N шагов подряд, каждый следующий кодируется заново, как на сайте
+// (буферы, которые шаг меняет на процессоре, догружаются); эталон -
+// запись эталона на N шагов с хэшами -> stepN.fnv.json
+const nsteps = +(q.get('n') || 1);
+const bufs = run.ctx.rec.buffers, arenaBuf = run.arena.buffer;
+const up = bufs.map(b => b === arenaBuf ? null : b.u8.slice());
+for (let k = 1; k <= nsteps; k++) {
+  if (k > 1) {
+    const cmds = run.encodeStep();
+    bufs.forEach((b, id) => {
+      if (b === arenaBuf) return;
+      let same = up[id] && up[id].length === b.u8.length;
+      for (let i = 0; same && i < b.u8.length; i++) if (up[id][i] !== b.u8[i]) same = false;
+      if (!same) { r.upload(id, b.u8); up[id] = b.u8.slice(); }
+    });
+    await r.useStep(cmds);
+  }
+  const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+  if (k % 25 === 0) await device.queue.onSubmittedWorkDone();
+}
 await device.queue.onSubmittedWorkDone();
-out(`шаг 1: ${(performance.now() - t0).toFixed(0)} мс`);
+out(`шагов ${nsteps}: ${(performance.now() - t0).toFixed(0)} мс`);
 const want = await (await get(q.get('ref'))).json();
 const fnvStep = (h, w) => { for (let i = 0; i < w.length; i++) h = Math.imul(h ^ w[i], 0x01000193) >>> 0; return h; };
 let bad = 0;
@@ -61,6 +82,6 @@ for (const b of tape.buffers.filter(b => ids.includes(b.id))) {
   for (let o = 0; o < words; o += part) h = fnvStep(h, await r.read(Math.min(part, words - o), r.base[b.id] + o));
   if (h !== want[b.id]) { bad++; out(`буфер ${b.id} ${b.label}: не совпал`); }
 }
-out(bad ? `ИТОГ ${name}: разошлось ${bad} из ${ids.length}` : `ИТОГ ${name}: шаг 1 побитово, ${ids.length} буферов`);
+out(bad ? `ИТОГ ${name}: шаг ${nsteps} - разошлось ${bad} из ${ids.length}` : `ИТОГ ${name}: шаг ${nsteps} побитово, ${ids.length} буферов`);
 out('ГОТОВО');
 </script></body></html>

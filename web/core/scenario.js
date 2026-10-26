@@ -73,6 +73,7 @@ export class SupercellScenario {
     this.morrison = false; this.ndcnst = 250; this.ihail = 1; this.iautoc = 1;
     this.rotunnoEmanuel = false; this.fallSpeedVT = 0;
     this.tqNudge = false;
+    this.updraftNudging = null;   // iinit=12 (UpdraftNudging)
     this.moist = true;
     this.wenoMomentum = false;
     this.forcing = null;
@@ -101,6 +102,7 @@ export class SupercellScenario {
     fl.useRayleigh = this.rayleighDamping;
     fl.useLargeScalePG = this.coriolis != null && this.largeScalePG;
     fl.cacheMoistureTurbulence = this.cacheMoistureTurbulence;
+    fl.updraftNudging = this.updraftNudging != null;
     return fl;
   }
 
@@ -167,6 +169,7 @@ export class SupercellScenario {
     step.wenoMomentum = this.wenoMomentum;
     step.setForcing(this.forcing, b.v0);
     if (this.tqNudge) step.enableTQNudge();
+    step.updraftNudging = this.updraftNudging;
     if (this.adaptiveTimeStep != null) step.enableStabilityReduction();
     if (this.stepFields.useRayleigh) step.setRayleigh(b.u0, b.v0, this.rayleighZd, f(this.rayleighAlpha));
     step.periodicX = !this.openX && !this.rigidX;

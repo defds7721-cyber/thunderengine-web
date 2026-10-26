@@ -236,11 +236,61 @@ export class LargeScaleForcing {
 }
 
 // ---- TimeStep.Fields
+// ---- UpdraftNudging: iinit=12, подталкивание восходящего потока
+// (Naylor and Gilmore 2012). Параметры - init3d.F:1437-1459, формула -
+// get_wnudge (misclibs.F:489-535), место - sound.F:578-600. Арифметика - по
+// машинному коду CM1 (gfortran 16.2 -O2): β = sqrt(fma(Z,Z, fma(X,X, Y·Y))),
+// cosf эталонной libm (копия в libm.js), 0.5·pi = 0x3FC90FDB; на GPU
+// tem·max(fma(c2, wmax, −w), 0). Множитель c2 = cos²(π/2·β) - константа
+// геометрии, свой буфер шага, не поле арены.
+export class UpdraftNudging {
+  constructor() {
+    this.xr = f(10000.0); this.yr = f(10000.0); this.zc = f(1500.0); this.zr = f(1500.0);
+    this.alpha = f(0.5); this.wmax = f(10.0); this.t1 = f(900.0); this.t2 = f(1200.0);
+  }
+  static outside = -1.0;
+  // IF( (mtime+dt).le.t2_wnudge ) - sound.F:583, в double
+  isActive(modelTime, dt) { return (modelTime + dt) <= this.t2; }
+  // gamm = Float(−(mtime − t1)/Double(Float(t2 − t1)) + 1.0), tem = alpha·gamm (misclibs.F:509-515)
+  tem(modelTime) {
+    let gamm = f(1.0);
+    if (modelTime >= this.t1) gamm = f(-(modelTime - this.t1) / f(this.t2 - this.t1) + 1.0);
+    return f(this.alpha * gamm);
+  }
+  // c2 на гранях w, раскладка поля арены; интерьер i, j и грани k = 1..nz-1 (CM1 k=2..nk)
+  multiplier(grid, zf) {
+    const out = new Float32Array(grid.count).fill(UpdraftNudging.outside);
+    const minx = f(grid.hx.face(0)), maxx = f(grid.hx.face(grid.nx));
+    const miny = f(grid.hy.face(0)), maxy = f(grid.hy.face(grid.ny));
+    const xc = f(minx + f(0.5 * f(maxx - minx)));       // param.F:7053
+    const yc = f(miny + f(0.5 * f(maxy - miny)));       // param.F:7384
+    const rxr = f(1.0 / Math.max(this.xr, f(1.0e-12))), ryr = f(1.0 / Math.max(this.yr, f(1.0e-12)));
+    const rzr = f(1.0 / Math.max(this.zr, f(1.0e-12)));   // init3d.F:1457-1459
+    const halfPi = new Float32Array(new Uint32Array([0x3FC90FDB]).buffer)[0];
+    for (let k = 1; k < grid.nz; k++) {
+      const z = f(f(f(zf[k]) - this.zc) * rzr);
+      for (let j = 0; j < grid.ny; j++) {
+        const y = f(f(f(grid.hy.centre(j)) - yc) * ryr), y2 = f(y * y);
+        for (let i = 0; i < grid.nx; i++) {
+          const x = f(f(f(grid.hx.centre(i)) - xc) * rxr);
+          const beta = f(Math.sqrt(fmaf(z, z, fmaf(x, x, y2))));
+          if (!(beta < 1.0)) continue;                    // misclibs.F:525
+          const c = cosf(f(halfPi * beta));
+          out[grid.index(i, j, k)] = f(c * c);
+        }
+      }
+    }
+    return out;
+  }
+}
+
 export class Fields {
   constructor(scalars, momentum) {
     this.scalars = [...scalars]; this.momentum = [...momentum];
     this.useTKE = false; this.usePressureTendency = true; this.terrain = false;
     this.useRayleigh = false; this.useLargeScalePG = false; this.cacheMoistureTurbulence = false;
+    // iinit=12: wtens - копия wten первого подшага стадии (sound.F:585-591), состояние
+    this.updraftNudging = false;
   }
   clone() { const c = new Fields(this.scalars, this.momentum); Object.assign(c, this, { scalars: [...this.scalars], momentum: [...this.momentum] }); return c; }
   static terrainFieldNames = ['th0', 'pi0', 'rho0', 'rr0', 'rf0', 'rth0', 'qv0', 'qc0', 'qi0',
@@ -280,6 +330,7 @@ export class Fields {
       ...(this.isMoist && this.usePressureTendency ? ['qpten', 'qtten', 'qvten', 'qcten', 'qvten_t'] : []),
       ...this.turbulenceFields, ...this.stepTendencyFields, ...this.moistureTurbulenceFields,
       ...(this.terrain ? Fields.terrainFieldNames : []),
+      ...(this.updraftNudging ? ['wtens'] : []),
       ...(this.needsZeroSpecies ? [Fields.zeroSpecies] : [])];
   }
   get scratchFields() {
@@ -417,6 +468,8 @@ export class TimeStep {
     this.tqNudge = false;
     this.nudgeTnb = this.nudgeQnb = this.nudgePartialb = null;
     this.nudgeActiveThisStep = false;
+    this._updraftNudging = null; this.wnudgeC2b = null;
+    this.wNudgeActiveThisStep = false; this.wNudgeTem = 0;
     this.modelTime = 0;
     this.domainMotion = [0, 0];
     this.skip = new Set();
@@ -566,6 +619,17 @@ export class TimeStep {
       this.frcVb = d.makeBuffer(grid.nz * 4, 'frc_vfrc');
       this.avgPartialb = d.makeBuffer(2 * grid.ny * grid.nz * 4, 'avg_uv_partial');
     }
+  }
+
+  // iinit=12 (sound.F:578-600): множитель - свой буфер шага (не арена: загрузка
+  // состояния его не трогает), Fields.updraftNudging даёт wtens.
+  get updraftNudging() { return this._updraftNudging; }
+  set updraftNudging(nud) {
+    if (nud && !this.fields.updraftNudging) throw new Error('подталкивание без поля wtens: Fields.updraftNudging');
+    if (nud && this.explicitAcoustics) throw new Error('подталкивание портировано для psolver=3 (sound.F); psolver=2 (sounde.F) - нет');
+    if (nud && this.fields.terrain) throw new Error('подталкивание с рельефом не портировано: zf(i,j,k) по столбцам (misclibs.F:524)');
+    this._updraftNudging = nud;
+    this.wnudgeC2b = nud ? this.ctx.device.makeBuffer(nud.multiplier(this.grid, this.vertical.zf), 'wnudge_c2') : null;
   }
 
   enableTQNudge() {
@@ -1359,6 +1423,10 @@ export class TimeStep {
       }
     }
 
+    // ---- подталкивание восходящего потока (iinit=12): по mtime начала шага
+    this.wNudgeActiveThisStep = this._updraftNudging ? this._updraftNudging.isActive(this.modelTime, this.dt) : false;
+    this.wNudgeTem = this._updraftNudging ? this._updraftNudging.tem(this.modelTime) : 0;
+
     // ---- подтягивание θ (testcase 10)
     this.nudgeActiveThisStep = false;
     if (this.tqNudge && this.nudgeTnb && this.nudgeQnb && this.nudgePartialb) {
@@ -1959,6 +2027,15 @@ export class TimeStep {
               e.setBase('rf0', this.rf0b, 17);
               bindTerrain(e);
             });
+            // iinit=12: после fpk, до решателя w (sound.F:578-600)
+            if (this._updraftNudging && this.wnudgeC2b && this.wNudgeActiveThisStep && !skip.has('updraftNudging')) {
+              const p = pack('ffi', [this.wNudgeTem, this._updraftNudging.wmax, n === 0 ? 1 : 0]);
+              enc('wnudge_tendency', [grid.nx, grid.ny, grid.nz - 1], tg3, false, e => {
+                e.setBytes(p, 1);
+                e.setBuffer(this.wnudgeC2b, 0, 2);
+                ['w', 'wten', 'wtens'].forEach((nm, i) => e.setBuffer(b, off(nm), i + 3));
+              });
+            }
             enc('acoustic_w_solve', cols, tgc, true, e => {
               ['pk1', 'pk2', 'qk', 'mm', 'fpk', 'wten', 'pp3d', 'w', 'cA', 'cB'].forEach((nm, i) => e.setBuffer(b, off(nm), i + 2));
             });
