@@ -1,0 +1,63 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Шкала времени</title>
+<style>html,body{margin:0;height:100%}iframe{border:0;width:1400px;height:900px}</style></head><body>
+<iframe id="f"></iframe>
+<script type="module">
+// Шкала времени на сайте: снимки копятся, перемотка показывает прошлое и в
+// срезах, и в объёме, прогон при перемотке стоит, «вживую» - снова текущее.
+// Объём проверяется по пикселям холста сразу после отрисовки: снимок экрана
+// WebKit у WebGPU-холста на паузе бывает старым.
+const out = s => window.webkit?.messageHandlers?.out?.postMessage(s);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const q = new URLSearchParams(location.search);
+const f = document.getElementById('f');
+f.src = '../index.html?lang=ru&s=supercell&speed=16&mode=' + (q.get('mode') || '2d') + (q.get('memchunk') ? '&memchunk=' + q.get('memchunk') : '');
+await new Promise(r => f.onload = r);
+const w = f.contentWindow, $ = id => w.document.getElementById(id);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let bad = 0; const ok = (c, s) => { if (!c) bad++; out((c ? 'да  ' : 'НЕТ ') + s); };
+// снимков не меньше need и прогон дальше 30-й минуты
+const need = +(q.get('need') || 10);
+for (let i = 0; i < 600 && !(+$('tl').max >= need && w.__te?.tl.times.some(t => t >= 1800)); i++) await wait(1000);
+const n = +$('tl').max;
+ok(n >= need && !$('tl').disabled, `снимков накопилось: ${n + 1}`);
+const te = w.__te;
+// светлые пиксели объёма после каждой отрисовки
+const px = [];
+if (te.vol) {
+  const orig = te.vol.draw.bind(te.vol);
+  te.vol.draw = () => {
+    orig();
+    const c = w.document.createElement('canvas'), v = te.vol.canvas; c.width = v.width; c.height = v.height;
+    const g = c.getContext('2d'); g.drawImage(v, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let b = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 300) b++;
+    px.push(b);
+  };
+}
+const hudLive = $('hud').textContent;
+// первый снимок не раньше 24-й минуты: дождь у суперячейки - между 20-й и 24-й
+// (кольцо здесь не переполняется: позиция ползунка = номер снимка)
+const pick = te.tl.times.findIndex(t => t >= 1440);
+$('tl').value = pick; $('tl').dispatchEvent(new w.Event('input'));
+// кадр, начатый до перемотки, сначала доходит до конца
+for (let i = 0; i < 60 && !(te.st.busy === false && $('hud').textContent.includes($('tlv').textContent) && (!te.vol || px.length)); i++) await wait(500);
+await wait(500);
+ok($('tlv').textContent !== 'вживую' && $('hud').textContent.includes($('tlv').textContent) && $('hud').textContent.trim() !== hudLive.trim(),
+  `перемотка: ${$('tlv').textContent}, ${$('hud').textContent.trim()}`);
+let mx = -1e9; for (const x of te.plan) if (x > mx) mx = x;
+ok(mx > 20, `в снимке есть эхо: ${mx.toFixed(1)} дБZ`);
+if (q.get('mode') === '3d') ok(px.length && px[px.length - 1] > 1000, `объём из снимка нарисован: ${px[px.length - 1]} светлых пикселей`);
+const kv1 = $('kv').textContent; await wait(2000);
+ok($('kv').textContent === kv1, 'при перемотке счёт стоит');
+$('tl').value = $('tl').max; $('tl').dispatchEvent(new w.Event('input'));
+await wait(1000);
+ok($('tlv').textContent === 'вживую', 'обратно вживую');
+out(bad ? `ИТОГ: ${bad} провалов` : 'ИТОГ: шкала времени работает'); out('ГОТОВО');
+</script></body></html>

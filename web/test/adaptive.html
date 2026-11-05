@@ -1,0 +1,68 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Сверка adapt_dt</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body><script type="module">
+// adapt_dt=1 в браузере против эталона: трасса часов шага (dt в битах, nsound,
+// mtime, cflmax, ksmax) после каждого шага. ?cfg=конфиг&n=шагов&ref=трасса
+// Эталон: запись по <конфиг> на n шагов (строки «ШАГ ...»).
+const q = new URLSearchParams(location.search);
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const get = u => fetch(u, { cache: 'no-store' });
+const v = '?v=' + Date.now();
+const C = await import('../core/config.js' + v);
+const { buildRun } = await import('../core/driver.js' + v);
+const { Replayer } = await import('../replay.js' + v);
+const conf = C.ConfigParser.parseText(await (await get(q.get('cfg'))).text());
+const run = buildRun(conf, null);
+const ad = run.adaptive;
+const first = ad.encodeInitial();
+for (const b of run.ctx.device.all) run.ctx.rec.id(b);
+const tape = run.tape([first]);
+const kdir = '../../data/kernels/';
+const kernels = await (await get(kdir + 'kernels.json')).json();
+const sources = {};
+await Promise.all(Object.keys(kernels).map(async n => { sources[n] = await (await get(kdir + n + '.wgsl')).text(); }));
+const adapter = await navigator.gpu.requestAdapter();
+const device = await adapter.requestDevice({ requiredLimits: {
+  maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
+const r = new Replayer(device, tape, kernels, sources);
+r.plan(false);
+await r.build();
+const bufs = run.ctx.rec.buffers;
+const up = bufs.map(b => b.u8.slice());
+tape.buffers.forEach((b, i) => r.upload(b.id, up[i]));
+const sid = ad.stabilityId;
+const stab = async () => { const w = await r.read(2, r.base[sid]); r.writeWords(r.base[sid], new Uint32Array(2)); return w; };
+const go = async cmds => {
+  bufs.forEach((b, id) => {
+    if (b === run.arena.buffer) return;
+    let same = up[id].length === b.u8.length;
+    for (let i = 0; same && i < b.u8.length; i++) if (up[id][i] !== b.u8[i]) same = false;
+    if (!same) { r.upload(id, b.u8); up[id] = b.u8.slice(); }
+  });
+  await r.useStep(cmds);
+  const e = device.createCommandEncoder(); r.encodeSteps(e, 1, false); device.queue.submit([e.finish()]);
+  return stab();
+};
+const hex = x => (new Uint32Array(new Float32Array([x]).buffer)[0]).toString(16).padStart(8, '0');
+const lines = [];
+const line = k => { const c = ad.clock; lines.push(`ШАГ ${k} dt ${hex(c.dt)} nsound ${c.nsound} mtime ${c.mtime.toFixed(9)} cfl ${hex(c.cflmax)} ks ${hex(c.ksmax)}`); };
+ad.start(await go(first));
+line(0);
+const n = +(q.get('n') || 40);
+for (let k = 1; k <= n; k++) { ad.clock.beginStep(); const cmds = run.encodeStep(); ad.endStep(await go(cmds)); line(k); }
+const ref = q.get('ref') ? (await (await get(q.get('ref'))).text()).trim().split('\n') : [];
+let bad = 0;
+lines.forEach((l, i) => { if (ref.length && ref[i] !== l) { bad++; if (bad < 6) out(`расходится:\n  js    ${l}\n  эталон ${ref[i]}`); } });
+out(lines[lines.length - 1]);
+out(ref.length ? (bad ? `ИТОГ: ${bad} из ${lines.length} строк расходятся` : `ИТОГ: ${lines.length} шагов побитово с эталоном`) : 'эталона нет');
+out('ГОТОВО');
+</script></body></html>

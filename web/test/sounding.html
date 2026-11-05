@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Проверка конструктора зондировки</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; } #box { width: 900px; }</style></head>
+<body><div id="box"></div><pre id="log"></pre>
+<script type="module">
+// Конструктор: перетаскивание точки Skew-T и годографа меняет файл, файл
+// разбирается ядром порта и собирается в сценарий суперячейки с isnd=7.
+const out = s => { document.getElementById('log').textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const v = '?v=' + Date.now();
+const T = await import('../thermo.js' + v);
+const { mountSounding } = await import('../sounding-ui.js' + v);
+const C = await import('../core/config.js' + v);
+let bad = 0;
+const ok = (c, s) => { if (!c) bad++; out((c ? 'да  ' : 'НЕТ ') + s); };
+let last = null;
+const box = document.getElementById('box');
+const ui = mountSounding(box, { spec: { mode: 'params', params: { ...T.DEFAULT_PARAMS }, wind: { ...T.DEFAULT_WIND } }, gridTop: 19750,
+  onChange: (spec, text) => { last = { spec, text }; } });
+await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const t0 = ui.text();
+// ползунок влаги
+const q = box.querySelector('[data-k="qvPbl"]');
+q.value = 16; q.dispatchEvent(new Event('input', { bubbles: true }));
+ok(last && last.text !== t0 && last.spec.params.qvPbl === 16, 'ползунок меняет файл');
+// перетаскивание точки росы у земли
+const sk = box.querySelector('.skewt'), b = sk.getBoundingClientRect();
+const fire = (el, type, x, y) => el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true }));
+const before = last.text;
+fire(sk, 'pointerdown', b.left + 1, b.top + 1); fire(sk, 'pointerup', b.left + 1, b.top + 1);   // мимо точек
+ok(ui.spec().mode === 'params' && last.text === before, 'случайное касание мимо точек ничего не меняет');
+const n0 = T.nodesFrom(T.paramProfile(ui.spec().params, T.levelHeights(22000)))[0];
+// найти экранное положение точки росы первого узла: перебор по строке у низа
+let hit = null;
+for (let x = b.left; x < b.right && !hit; x += 1) {
+  fire(sk, 'pointerdown', x, b.bottom - 20 - 1);
+  fire(sk, 'pointermove', x - 30, b.bottom - 21);
+  fire(sk, 'pointerup', x - 30, b.bottom - 21);
+  const n = ui.spec().nodes?.[0];
+  if (n && (n.td !== n0.td || n.t !== n0.t)) hit = n;
+}
+ok(hit && (hit.td < n0.td || hit.t < n0.t) && ui.spec().mode === 'nodes', `попадание в точку переводит в свои точки и тащит её: t ${n0.t}->${hit?.t}, td ${n0.td}->${hit?.td}`);
+// годограф
+const ho = box.querySelector('.hodo'), hb = ho.getBoundingClientRect();
+fire(ho, 'pointerdown', hb.left + hb.width / 2, hb.top + hb.height / 2);
+fire(ho, 'pointermove', hb.left + hb.width / 2 - 20, hb.top + hb.height / 2 - 20);
+fire(ho, 'pointerup', hb.left + hb.width / 2 - 20, hb.top + hb.height / 2 - 20);
+const w0 = ui.spec().wind.nodes[0];
+ok(ui.spec().wind.kind === 'nodes' && (w0.u !== 0 || w0.v !== 0), `ветер у земли перетащен: ${w0.u}, ${w0.v}`);
+// файл -> ядро порта -> сценарий
+const conf = C.ConfigParser.parse({ ...(await (await fetch('../../data/presets/supercell.json')).json()),
+  param2: { ...(await (await fetch('../../data/presets/supercell.json')).json()).param2, isnd: 7 } });
+const snd = C.parseSounding(last.text, { windsFromFile: true, moist: true });
+const sc = C.ScenarioBuilder.scenario(conf, snd);
+ok(sc && sc.grid.nx === 120, 'сценарий с isnd=7 собран');
+const back = T.fromText(last.text);
+ok(back.prof.z.length === last.text.trim().split('\n').length - 1 && back.prof.psfc === 1000, 'файл читается обратно');
+out(bad ? `ИТОГ: ${bad} провалов` : 'ИТОГ: всё сошлось');
+out('ГОТОВО');
+</script></body></html>

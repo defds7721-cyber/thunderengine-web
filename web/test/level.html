@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Высота среза</title>
+<style>html,body{margin:0}iframe{border:0;width:1400px;height:900px}</style></head><body><iframe id="f"></iframe>
+<script type="module">
+// Ползунок высоты среза меняет карту (без композита), стрелки и линию уровня
+// на разрезе - на ходу и на паузе.
+const out = s => window.webkit?.messageHandlers?.out?.postMessage(s);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const q = new URLSearchParams(location.search);
+const f = document.getElementById('f');
+f.src = '../index.html?lang=ru&s=supercell&speed=' + (q.get('speed') || '16') + '&arrows=1';
+await new Promise(r => f.onload = r);
+const w = f.contentWindow, $ = id => w.document.getElementById(id), wait = ms => new Promise(r => setTimeout(r, ms));
+let bad = 0; const ok = (c, s) => { if (!c) bad++; out((c ? 'да  ' : 'НЕТ ') + s); };
+for (let i = 0; i < 120 && !(w.__te && w.__te.st.steps > 300); i++) await wait(1000);
+const te = w.__te;
+if (q.get('pause')) { $('speed').children[0].click(); await wait(2000); }
+// композит не снимается руками: ползунок сам переводит карту на высоту
+const sum = () => { let s = 0; for (const x of te.plan) if (x > 5) s += x; return Math.round(s); };
+// после сдвига - два полных кадра (кадр, начатый до сдвига, ещё со старой высотой)
+const frames = async () => { for (let n = 0; n < 2; n++) { const s0 = te.st.steps; for (let i = 0; i < 40 && te.st.steps === s0; i++) await wait(100); } };
+const set = async k => { const el = $('level'); el.value = k; el.dispatchEvent(new w.Event('input')); if (te.st.perFrame) await frames(); else await wait(1500); };
+await set(1); const a = sum(), la = $('levelv').textContent, sa = te.st.level;
+await set(25); const b = sum(), lb = $('levelv').textContent, sb = te.st.level;
+out(`уровень ${sa} (${la}): ${a}; уровень ${sb} (${lb}): ${b}; ползунок hidden=${$('levelGrp').hidden} max=${$('level').max}`);
+ok(sa === 1 && sb === 25, 'st.level следует за ползунком');
+ok(a !== b, 'карта на другой высоте другая');
+ok(!$('composite').checked && $('levelCap').textContent === 'Высота среза', 'ползунок снял композит');
+out(bad ? `ИТОГ: ${bad} провалов` : 'ИТОГ: высота среза работает'); out('ГОТОВО');
+</script></body></html>

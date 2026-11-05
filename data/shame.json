@@ -1,0 +1,56 @@
+{
+ "updated": "2026-11-04T15:25:48Z",
+ "checks": 0,
+ "entries": [
+  {
+   "time": "2026-11-04T10:51:07.237425Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-04T10:50:46.933391Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-04T10:50:41.845635Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-04T10:50:41.673042Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-04T10:50:07.452880Z",
+   "cc": "SE",
+   "action": "ListAttachedUserPolicies"
+  },
+  {
+   "time": "2026-11-04T10:50:06.834336Z",
+   "cc": "SE",
+   "action": "GetCallerIdentity"
+  },
+  {
+   "time": "2026-11-02T02:53:38.982369Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-02T02:51:51.610747Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-02T02:51:51.451134Z",
+   "cc": "SE",
+   "action": "InvokeModel"
+  },
+  {
+   "time": "2026-11-02T02:51:51.290950Z",
+   "cc": "SE",
+   "action": "ListFoundationModelAgreementOffers"
+  }
+ ]
+}

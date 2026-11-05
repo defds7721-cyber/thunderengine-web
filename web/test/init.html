@@ -1,0 +1,195 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru">
+<head><meta charset="utf-8"><title>Сверка начального состояния</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body>
+<script>
+// вложенные модули (./base.js и т. д.) - мимо кэша WebKit: карта импорта с меткой
+{ const t = Date.now(), m = {};
+  for (const n of ['f32', 'gpu', 'grid', 'libm', 'base', 'scenario', 'terrain', 'config', 'timestep', 'micro', 'micro_powfix',
+    'radiation', 'radiation_layout', 'driver']) m[new URL(`../core/${n}.js`, location.href).href] = `../core/${n}.js?t=${t}`;
+  const s = document.createElement('script'); s.type = 'importmap'; s.textContent = JSON.stringify({ imports: m });
+  document.currentScript.after(s); }
+</script>
+<script type="module">
+// Сверка JS-переноса конфигурации и сценария (config.js, base.js,
+// scenario.js) с записью эталона: арена после sc.fill по каждому полю, профили,
+// которые сценарий отдаёт шагу, сетка. Эталон - tape/all/<пресет>
+// (--warm 0) или ?dir=<папка ленты>&cfg=<файл конфига>&snd=<зонд>.
+// ?s=a,b - только эти пресеты.
+const q = new URLSearchParams(location.search);
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+const get = u => fetch(u, { cache: 'no-store' });
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const v = '';
+const C = await import('../core/config.js' + v);
+const { FieldArena, Grid } = await import('../core/grid.js' + v);
+const { Device } = await import('../core/gpu.js' + v);
+const { f } = await import('../core/f32.js' + v);
+
+// поток байт файла сравнивается с массивом кусками - эталон целиком в память не грузится
+async function streamCompare(url, mine, onDiff) {
+  const res = await get(url);
+  if (!res.ok) return null;
+  const rd = res.body.getReader();
+  let off = 0, carry = new Uint8Array(0), n = 0;
+  for (;;) {
+    const { value, done } = await rd.read();
+    if (done) break;
+    let chunk = value;
+    if (carry.length) { const t = new Uint8Array(carry.length + chunk.length); t.set(carry); t.set(chunk, carry.length); chunk = t; }
+    const words = chunk.length >> 2;
+    const w = new Uint32Array(chunk.buffer, chunk.byteOffset, words);
+    const base = off >> 2;
+    for (let i = 0; i < words; i++) if (w[i] !== mine[base + i]) { n++; onDiff(base + i, w[i]); }
+    off += words * 4;
+    carry = chunk.slice(words * 4);
+  }
+  return { n, bytes: off };
+}
+
+const fbits = x => { const a = new Float32Array([x]); return new Uint32Array(a.buffer)[0]; };
+
+async function check(name, opts = {}) {
+  const dir = opts.dir ?? `../../tape/all/${name}`;
+  let bad = 0;
+  const say = s => { bad++; if (bad <= 25) out(`  ${s}`); };
+  const ref = await (await get(`${dir}/tape.json`)).json();
+  const text = await (await get(opts.cfg ?? `../../data/presets/${name}.json`)).text();
+  const conf = C.ConfigParser.parseText(text);
+  let sounding = null;
+  if (opts.snd) sounding = C.parseSounding(await (await get(opts.snd)).text(), { windsFromFile: (conf.int('isnd') ?? 5) === 7,
+    moist: (conf.int('imoist') ?? 1) !== 0 });
+  else sounding = await C.loadSounding(name, conf, u => get('../../data/presets/' + u).then(r => r.ok ? r.text() : null));
+  const t0 = performance.now();
+  const sc = C.ScenarioBuilder.scenario(conf, sounding);
+  for (const k of ['nx', 'ny', 'nz']) if (sc.grid[k] !== ref[k]) say(`${k}: js ${sc.grid[k]} эталон ${ref[k]}`);
+  if (sc.dt !== ref.dt) say(`dt: js ${sc.dt} эталон ${ref.dt}`);
+  // сетка против grid.json эталона, если есть
+  for (const gp of [`../../data/${name}/grid.json`, `../../build/gridx/${name}/grid.json`]) {
+    const r = await get(gp); if (!r.ok) continue;
+    const gi = await r.json(), h = Grid.halo;
+    const cmpArr = (what, a, b) => { for (let i = 0; i < b.length; i++) if (a[i] !== b[i]) { say(`сетка ${what}[${i}]: js ${a[i]} эталон ${b[i]}`); return; } };
+    cmpArr('xh', sc.grid.hx.xh.slice(h, h + sc.grid.nx), gi.x.xh); cmpArr('xf', sc.grid.hx.xf.slice(h, h + sc.grid.nx + 1), gi.x.xf);
+    cmpArr('yh', sc.grid.hy.xh.slice(h, h + sc.grid.ny), gi.y.xh); cmpArr('yf', sc.grid.hy.xf.slice(h, h + sc.grid.ny + 1), gi.y.xf);
+    cmpArr('zh', sc.vertical.zh, gi.zh); cmpArr('zf', sc.vertical.zf, gi.zf);
+    break;
+  }
+  // профили шага против буферов ленты по подписи
+  const p = sc.stepProfiles();
+  const prof = {
+    rho0: p.rho0, rr0: p.rr0, rf0: p.rf0, th0: p.th0, pi0: p.pi0, qv0: p.qv0, qc0: p.qc0,
+    'morr.th0': p.th0, 'morr.pi0': p.pi0, rth0: p.th0.map(x => f(1 / x)),
+    u0: sc.base.u0.map(f), v0: sc.base.v0.map(f),
+    c1: sc.vertical.c1, c2: sc.vertical.c2, mh: sc.vertical.mh, mf: sc.vertical.mf, hmetric: Array.from(sc.grid.metricValues()),
+  };
+  const haveBuffers = (await get(`${dir}/buffers/${ref.buffers[0].id}.pre.bin`)).ok;
+  let profOk = 0, profBad = 0;
+  if (haveBuffers) for (const b of ref.buffers) {
+    const mine = prof[b.label];
+    if (!mine) continue;
+    const want = new Float32Array(await (await get(`${dir}/buffers/${b.id}.pre.bin`)).arrayBuffer());
+    let n = 0, first = -1;
+    for (let i = 0; i < want.length; i++) if (fbits(mine[i] ?? NaN) !== fbits(want[i])) { n++; if (first < 0) first = i; }
+    if (n) { profBad++; say(`профиль ${b.label}: ${n} из ${want.length}; [${first}] js ${mine[first]} эталон ${want[first]}`); }
+    else profOk++;
+  }
+  // арена
+  let arenaInfo = 'снимков нет';
+  if (haveBuffers) {
+    const names = Object.entries(ref.fields).sort((a, b) => a[1] - b[1]).map(e => e[0]);
+    const arena = new FieldArena({ context: { device: new Device() }, grid: sc.grid, fields: names });
+    if (arena.fieldStride !== ref.fieldStride) say(`fieldStride: js ${arena.fieldStride} эталон ${ref.fieldStride}`);
+    sc.fill(arena);
+    if (sc.radiation) for (const n of ['effc', 'effi', 'effs']) arena.field(n).fill(25.0);
+    if (sc.terrain) sc.fillTerrain(arena, sc.terrain);
+    const stride = ref.fieldStride >> 2;
+    const perField = new Map();
+    const mine = arena.buffer.u32;
+    const ab = ref.buffers.find(b => b.arena);
+    const fl = new Float32Array(1), ul = new Uint32Array(fl.buffer);
+    const r = await streamCompare(`${dir}/buffers/${ab.id}.pre.bin`, mine, (i, w) => {
+      const nm = names[Math.floor(i / stride)];
+      const e = perField.get(nm) ?? { n: 0, first: i, want: w };
+      e.n++; perField.set(nm, e);
+    });
+    const fieldNz = names.length;
+    for (const [nm, e] of perField) {
+      ul[0] = e.want; const wv = fl[0];
+      const c = e.first - names.indexOf(nm) * stride;
+      const k = Math.floor(c / (sc.grid.strideJ * sc.grid.strideK)), rem = c % (sc.grid.strideJ * sc.grid.strideK);
+      say(`арена ${nm}: ${e.n} слов; первое i=${rem % sc.grid.strideJ - 3} j=${Math.floor(rem / sc.grid.strideJ) - 3} k=${k}: js ${arena.buffer.f32[e.first]} эталон ${wv}`);
+    }
+    arenaInfo = `арена ${fieldNz} полей, ${(r.bytes / 1e6).toFixed(0)} МБ, полей с расхождением ${perField.size}`;
+  }
+  out(`${bad ? 'РАСХОЖДЕНИЕ' : 'совпало'} ${name}: ${arenaInfo}; профилей совпало ${profOk}, разошлось ${profBad}; `
+    + `${(performance.now() - t0).toFixed(0)} мс`);
+  return bad;
+}
+
+// ?libm=1: копии эталонной libm (libm.js) против её ответов (build/libmtest/samples.bin:
+// тройки x, y, результат как биты float)
+async function checkLibm() {
+  const L = await import('../core/libm.js' + v);
+  const u = new Uint32Array(await (await get('../../build/libmtest/samples.bin')).arrayBuffer());
+  const fl = new Float32Array(u.buffer);
+  const names = ['powf', 'expf', 'logf', 'cosf', 'sinf', 'tanhf', 'tanhf (малые)', 'sinf (малые)', 'cosf (малые)'];
+  const fns = [(x, y) => L.powf(x, y), L.expf, L.logf, L.cosf, L.sinf, L.tanhf, L.tanhf, L.sinf, L.cosf];
+  const per = u.length / 3 / names.length;
+  let bad = 0;
+  for (let n = 0; n < names.length; n++) {
+    let miss = 0, rnd = 0, first = '';
+    const t0 = performance.now();
+    for (let i = n * per; i < (n + 1) * per; i++) {
+      const x = fl[3 * i], y = fl[3 * i + 1], want = u[3 * i + 2];
+      const got = fns[n](x, y);
+      const gb = new Uint32Array(new Float32Array([got]).buffer)[0];
+      if (gb !== want && !(got !== got && fl[3 * i + 2] !== fl[3 * i + 2])) { miss++; if (!first) first = `x=${x} y=${y}: js ${got} darwin ${fl[3 * i + 2]}`; }
+      const plain = n === 0 ? Math.fround(Math.pow(x, y)) : Math.fround(({ 1: Math.exp, 2: Math.log, 3: Math.cos, 4: Math.sin, 5: Math.tanh, 6: Math.tanh, 7: Math.sin, 8: Math.cos })[n](x));
+      if (new Uint32Array(new Float32Array([plain]).buffer)[0] !== want) rnd++;
+    }
+    bad += miss;
+    out(`${names[n]}: не совпало ${miss} из ${per} (с fround(Math) было бы ${rnd}); ${(performance.now() - t0).toFixed(0)} мс ${first}`);
+  }
+  const u2 = new Uint32Array(await (await get('../../build/libmtest/samples2.bin')).arrayBuffer());
+  const f2 = new Float32Array(u2.buffer), n2 = u2.length / 3;
+  for (const [nm, fn, plain, a, b] of [['asinf', L.asinf, Math.asin, 0, 600000], ['atanf', L.atanf, Math.atan, 600000, n2]]) {
+    let miss = 0, rnd = 0, first = '';
+    for (let i = a; i < b; i++) {
+      const x = f2[3 * i], want = u2[3 * i + 2];
+      const gb = new Uint32Array(new Float32Array([fn(x)]).buffer)[0];
+      if (gb !== want) { miss++; if (!first) first = `x=${x}: js ${fn(x)} darwin ${f2[3 * i + 2]}`; }
+      if (new Uint32Array(new Float32Array([Math.fround(plain(x))]).buffer)[0] !== want) rnd++;
+    }
+    bad += miss;
+    out(`${nm}: не совпало ${miss} из ${b - a} (с fround(Math) было бы ${rnd}) ${first}`);
+  }
+  return bad;
+}
+
+let total = 0;
+try {
+  if (q.get('libm')) total += await checkLibm();
+  else if (q.get('dir')) total += await check(q.get('name') ?? 'custom', { dir: q.get('dir'), cfg: q.get('cfg'), snd: q.get('snd') });
+  else {
+    const index = await (await get('../../data/index.json')).json();
+    const all = [...index.filter(x => !x.off).map(x => x.name), 'hurricane_3d', 'tornado_stretched'];
+    const list = q.get('s') ? q.get('s').split(',') : all;
+    for (const n of list) {
+      try { total += await check(n); }
+      catch (e) { total++; out(`ОШИБКА ${n}: ${e?.stack || e}`); }
+    }
+  }
+} catch (e) { total++; out('ОШИБКА ' + (e?.stack || e)); }
+out(total ? `ИТОГ: расхождений ${total}` : 'ИТОГ: всё совпало');
+out('ГОТОВО');
+</script>
+</body>
+</html>

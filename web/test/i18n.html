@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru"><head><meta charset="utf-8"><title>Перевод</title>
+<style>html,body{margin:0}iframe{border:0;width:1400px;height:1000px}</style></head><body><iframe id="f"></iframe>
+<script type="module">
+// Английская версия страницы: весь видимый текст без кириллицы.
+//   ?page=index.html?s=supercell | editor.html?snd=1  (&lang=en добавляется)
+const out = s => window.webkit?.messageHandlers?.out?.postMessage(s);
+const q = new URLSearchParams(location.search);
+const page = q.get('page') || 'index.html?s=supercell';
+const f = document.getElementById('f');
+f.src = '../' + page + (page.includes('?') ? '&' : '?') + 'lang=en';
+await new Promise(r => f.onload = r);
+await new Promise(r => setTimeout(r, +(q.get('wait') || 15000)));
+const d = f.contentDocument, left = new Set();
+const walk = n => {
+  if (n.nodeType === 3) { if (/[А-Яа-яЁё]/.test(n.nodeValue) && n.parentElement?.closest('script,style') == null) left.add(n.nodeValue.trim().slice(0, 140)); return; }
+  if (n.nodeType !== 1) return;
+  for (const a of ['title', 'aria-label', 'placeholder']) { const v = n.getAttribute(a); if (v && /[А-Яа-яЁё]/.test(v)) left.add(`[${a}] ${v}`); }
+  n.childNodes.forEach(walk);
+};
+walk(d.body);
+out(`${page}: осталось с кириллицей ${left.size}`);
+for (const s of left) out('  ' + s);
+out('ГОТОВО');
+</script></body></html>

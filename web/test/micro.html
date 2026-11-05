@@ -1,0 +1,134 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 vvas2002. ThunderEngine Web, https://github.com/defds7721-cyber/thunderengine-web
+  This file is part of ThunderEngine. Any use of it, modified or not, including on a website,
+  must stay open source under AGPL-3.0 and keep the "ThunderEngine" credit and link (NOTICE, section 7(b)).
+-->
+<html lang="ru">
+<head><meta charset="utf-8"><title>Сверка микрофизики</title>
+<style>body { font: 13px ui-monospace, Menlo, monospace; margin: 16px; white-space: pre-wrap; }</style></head>
+<body>
+<script type="module">
+// Сверка web/core/micro.js с записью эталона:
+//  - диагностика радара Моррисона (tape.diag) команда в команду;
+//  - буферы схемы (по подписи) байт в байт с buffers/<id>.pre.bin;
+//  - блок микрофизики внутри шага: команды схемы - непрерывный участок
+//    tape.steps[0] (буферы сравниваются по подписи и смещению).
+// ?tapes=путь1,путь2 (относительно корня репо; по умолчанию все tape/all/*)
+// &cfg=путь к JSON конфигурации для своих лент (иначе data/presets/<имя>.json).
+const q = new URLSearchParams(location.search);
+const out = s => { document.body.textContent += s + '\n'; window.webkit?.messageHandlers?.out?.postMessage(s); };
+const get = u => fetch(u, { cache: 'no-store' });
+window.onerror = (m, s, l) => out(`ОШИБКА ${m} ${s}:${l}`);
+window.onunhandledrejection = e => out('ОШИБКА ' + (e.reason?.stack || e.reason));
+const v = '?v=' + Date.now();
+const { MorrisonMicrophysics, Microphysics, RotunnoEmanuelMicrophysics } = await import('../core/micro.js' + v);
+const { Grid, VerticalGrid } = await import('../core/grid.js' + v);
+const { GpuContext } = await import('../core/gpu.js' + v);
+
+const ALL = ['bubble_line_shear', 'derecho_env', 'hslc', 'mcs', 'multicell', 'pulse_storm', 'shear_wk82', 'single_cell',
+  'squall_cold_pool', 'squall_line', 'supercell', 'supercell_high_cape', 'supercell_straight', 'supercell_stretched', 'target3d'];
+const tapes = q.get('tapes') ? q.get('tapes').split(',') : ALL.map(n => 'tape/all/' + n);
+const cfgs = q.get('cfg') ? q.get('cfg').split(',') : null;
+let total = 0;
+
+const strip = l => l.filter(c => c.op !== 'barrier');
+// лента записана с отсортированными ключами - сравнение в том же виде
+const canon = c => c === undefined ? 'нет' : JSON.stringify(Object.fromEntries(Object.entries(c).sort(([a], [b]) => a < b ? -1 : 1)));
+// команда с буфером по подписи и смещением, для сравнения между разными нумерациями
+function norm(c, labelOf) {
+  if (c.op === 'buf') return { ...c, buf: c.buf < 0 ? -1 : labelOf(c.buf) };
+  if (c.op === 'copy') return { ...c, src: labelOf(c.src), dst: labelOf(c.dst) };
+  return c;
+}
+
+for (const [ti, dir] of tapes.entries()) {
+  const name = dir.split('/').pop();
+  let bad = 0;
+  const say = s => { bad++; if (bad < 20) out(`  ${s}`); };
+  try {
+    const tape = await (await get(`../../${dir}/tape.json`)).json();
+    const conf = await (await get(cfgs ? '../../' + cfgs[ti] : `../../data/presets/${name}.json`)).json();
+    const P = {};
+    for (const s of Object.values(conf)) if (s && typeof s === 'object') Object.assign(P, s);
+    // сетка: размеры из ленты, номинальные шаги из конфига, уровни - из grid.json или равномерно
+    let vertical;
+    const gj = await get(`../../data/${name}/grid.json`);
+    if (gj.ok && !cfgs) vertical = new VerticalGrid((await gj.json()).zf, P.dz);
+    else vertical = VerticalGrid.uniform(tape.nz, P.dz);
+    const grid = new Grid({ nx: tape.nx, ny: tape.ny, nz: tape.nz, dx: P.dx, dy: P.dy, dz: P.dz });
+    const byLabel = Object.fromEntries(tape.buffers.map(b => [b.label, b]));
+    const pre = async id => new Uint8Array(await (await get(`../../${dir}/buffers/${id}.pre.bin`)).arrayBuffer());
+    const floats = async label => Array.from(new Float32Array((await pre(byLabel[label].id)).buffer));
+    const ctx = new GpuContext({ warmOnly: tape.constants.warmOnly });
+    // арена - только идентичность и смещения (содержимое схеме не нужно)
+    const arenaRef = tape.buffers.find(b => b.arena);
+    const arena = {
+      buffer: { length: arenaRef.length, label: arenaRef.label },
+      handle: n => { if (!(n in tape.fields)) throw new Error('нет поля ' + n); return { name: n, offset: tape.fields[n] }; },
+    };
+    const ptype = P.ptype;
+    let mp, prefix;
+    if (ptype === 5) {
+      mp = new MorrisonMicrophysics({ context: ctx, grid, vertical, th0: await floats('morr.th0'), pi0: await floats('morr.pi0'),
+        dt: tape.dt, ihail: P.ihail, ndcnst: P.ndcnst, drizzleFallSpeed: P.testcase === 5 });
+      prefix = 'morr.';
+      // диагностика: чистый Recorder, как у записывателя
+      mp.encodeReflectivity(ctx.makeCommandBuffer(), arena);
+      const diag = ctx.rec.take();
+      const a = strip(diag), b = strip(tape.diag || []);
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if (canon(a[i]) !== canon(b[i])) { say(`диагностика: команда ${i}: js ${canon(a[i])} | эталон ${canon(b[i])}`); break; }
+      }
+    } else if (ptype === 2) {
+      mp = new Microphysics({ context: ctx, grid, vertical, th0: await floats('mp.th0'), pi0: await floats('mp.pi0'),
+        dt: tape.dt, ihail: P.ihail, iautoc: P.iautoc });
+      prefix = 'mp.';
+    } else if (ptype === 6) {
+      mp = new RotunnoEmanuelMicrophysics({ context: ctx, grid, vertical, th0: await floats('re87.th0'), pi0: await floats('re87.pi0'), vT: P.v_t });
+      prefix = 're87.';
+    } else { out(`${name}: ptype ${ptype} - нет схемы`); continue; }
+    // блок шага
+    mp.encode(ctx.makeCommandBuffer().makeComputeCommandEncoder(), arena, tape.dt, false);
+    const mine = strip(ctx.rec.take());
+    const labelMine = id => { const b = ctx.rec.buffers[id]; return b === arena.buffer ? 'arena' : b.label; };
+    const labelRef = id => { const b = tape.buffers[id]; return b.arena ? 'arena' : b.label; };
+    const A = mine.map(c => canon(norm(c, labelMine)));
+    const B = strip(tape.steps[0]).map(c => canon(norm(c, labelRef)));
+    let at = -1;
+    for (let s = 0; s + A.length <= B.length && at < 0; s++) {
+      let k = 0; while (k < A.length && A[k] === B[s + k]) k++;
+      if (k === A.length) at = s;
+    }
+    if (at < 0) {
+      // лучшее частичное совпадение - для отчёта
+      let best = 0, bs = 0;
+      for (let s = 0; s < B.length; s++) { let k = 0; while (k < A.length && A[k] === B[s + k]) k++; if (k > best) { best = k; bs = s; } }
+      say(`шаг: блок схемы (${A.length} команд) не найден; лучшее совпадение ${best} команд с ${bs}: js ${A[best]} | эталон ${B[bs + best]}`);
+    }
+    // буферы схемы
+    let nbuf = 0;
+    for (const b of ctx.rec.buffers) {
+      if (!b.label || !b.label.startsWith(prefix)) continue;
+      const ref = byLabel[b.label];
+      if (!ref) { say(`буфер ${b.label}: нет в ленте`); continue; }
+      nbuf++;
+      if (ref.length !== b.length) { say(`буфер ${b.label}: длина js ${b.length} эталон ${ref.length}`); continue; }
+      const w = new Uint32Array((await pre(ref.id)).buffer), g = new Uint32Array(b.ab, 0, w.length);
+      let n = 0, first = -1;
+      for (let i = 0; i < w.length; i++) if (w[i] !== g[i]) { n++; if (first < 0) first = i; }
+      if (n) {
+        const fw = new Float32Array(w.buffer), fg = new Float32Array(g.buffer, 0, w.length);
+        say(`буфер ${b.label}: ${n} слов из ${w.length}; [${first}] js ${fg[first]} эталон ${fw[first]}`);
+      }
+    }
+    out(`${name} (ptype ${ptype}): блок шага ${at >= 0 ? 'найден с ' + at : 'НЕТ'}, ${A.length} команд, буферов схемы ${nbuf}, расхождений ${bad}`);
+  } catch (e) { say('ОШИБКА ' + (e?.stack || e)); out(`${name}: сбой`); }
+  total += bad;
+}
+out(total ? `ИТОГ: расхождений ${total}` : 'ИТОГ: совпало всё');
+out('ГОТОВО');
+</script>
+</body>
+</html>

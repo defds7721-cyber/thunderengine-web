@@ -1,0 +1,59 @@
+ThunderEngine Web
+Copyright (C) 2026 vvas2002
+https://github.com/defds7721-cyber/thunderengine-web
+
+Licensed under the GNU Affero General Public License, version 3 only (LICENSE).
+
+------------------------------------------------------------------
+Additional terms under section 7(b) of the AGPL-3.0
+------------------------------------------------------------------
+
+Any interactive user interface of a work that contains this software or a
+modified version of it, including one offered to users over a network,
+must keep visible:
+
+1. the name "ThunderEngine", and
+2. a link to the original repository above (or to its successor named by
+   the copyright holder).
+
+These are author attributions in the sense of section 7(b). Removing them
+is not permitted.
+
+------------------------------------------------------------------
+Third-party code ported in this work
+------------------------------------------------------------------
+
+CM1 (Cloud Model 1), release 20.2
+  Copyright (c) 2020 George Bryan
+  MIT License
+  Permission is hereby granted, free of charge, to any person obtaining a
+  copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions: The above copyright notice and this permission
+  notice shall be included in all copies or substantial portions of the
+  Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+RRTMG longwave and shortwave radiation
+  Copyright (c) Atmospheric and Environmental Research, Inc. (AER)
+  BSD 3-Clause License (current AER release of RRTMG)
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met: 1. Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+  3. Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED.
+
+Microphysics and surface schemes adapted in CM1 from the Weather Research
+and Forecasting (WRF) model: public domain.
+
+CM1 acknowledges further code adapted from the Advanced Regional Prediction
+System (ARPS), University of Oklahoma.
