@@ -24,25 +24,29 @@ fn nego(x: f32) -> f32 { return bitcast<f32>(bitcast<u32>(x) ^ (0x80000000u ^ Z0
 // Остаток fma(-q, b, a) - порядка ulp(a); при |a| < 2^-60 он ушёл бы ниже
 // FLT_MIN и обнулился (GPU сбрасывает субнормальные), поправка молча не
 // сработала бы. Поэтому малый числитель масштабируется на 2^64 - точно.
+// Без ветвлений и раннего выхода: тот же результат (с неподвижной точки шаг
+// ничего не меняет), а компилятор драйвера не тонет в сотнях встроенных циклов.
 fn div_core(a: f32, b: f32) -> f32 {
-    var q = opq(a / b);
-    if (q == 0.0f || abs(q) > 3.0e38f || q != q || abs(q) < 1.0e-37f) { return q; }
+    let q0 = opq(a / b);
+    let special = q0 == 0.0f || abs(q0) > 3.0e38f || q0 != q0 || abs(q0) < 1.0e-37f;
+    var q = q0;
     var r = abs(fma(nego(q), b, a));
     for (var k = 0; k < 4; k++) {
         let qu = bitcast<f32>(bitcast<u32>(q) + 1u);
         let qd = bitcast<f32>(bitcast<u32>(q) - 1u);
         let ru = abs(fma(nego(qu), b, a));
         let rd = abs(fma(nego(qd), b, a));
-        if (ru < r) { q = qu; r = ru; } else if (rd < r) { q = qd; r = rd; } else { break; }
+        let up = ru < r;
+        let dn = !up && rd < r;
+        q = select(select(q, qd, dn), qu, up);
+        r = select(select(r, rd, dn), ru, up);
     }
-    return q;
+    return select(q, q0, special);
 }
 fn div_cr(a: f32, b: f32) -> f32 {
-    if (abs(a) < 8.67361738e-19f && a != 0.0f) {
-        let q = div_core(opq(a * 1.8446744e19f), b);
-        return opq(q * 5.42101086e-20f);
-    }
-    return div_core(a, b);
+    let small = abs(a) < 8.67361738e-19f && a != 0.0f;
+    let q = div_core(select(a, opq(a * 1.8446744e19f), small), b);
+    return select(q, opq(q * 5.42101086e-20f), small);
 }
 // Корень с корректным округлением (probe/ops: 0 промахов). Малый аргумент -
 // масштабом 2^64 (корень - 2^32), по той же причине, что у div_cr.
