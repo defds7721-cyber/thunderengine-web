@@ -1064,6 +1064,10 @@
 "at": "web/view.js"
 },
 {
+"ru": "Относительная влажность",
+"at": "web/view.js"
+},
+{
 "ru": "(M[off + c(i, j, k)]); }\nfn value(layer: u32, i: u32, j: u32, k: u32) -> f32 {\n  switch (layer) {\n    case 0u: { return f(P[9], i, j, k); }\n    case 1u: { return 0.5 * (f(P[10], i, j, k) + f(P[10], i, j, k + 1u)); }\n    case 2u: { return D[c(i, j, k)] * 1000.0; }\n    case 3u: { return (f(P[11], i, j, k) + f(P[12], i, j, k)) * 1000.0; }\n    case 4u: { return f(P[13], i, j, k); }\n    case 5u: {\n      let u = 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k));\n      let v = 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k));\n      return sqrt(u * u + v * v);\n    }\n    case 7u: { return 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)); }\n    case 8u: { return 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k)); }\n    default: {\n      // радиальная от радара в (P[18], P[19]) м; ветер относительно земли:\n      // область движется со скоростью (umove, vmove) - P[20], P[21]\n      let u = 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)) + bitcast",
 "at": "web/view.js"
 },

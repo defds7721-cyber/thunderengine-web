@@ -26,7 +26,8 @@ const NS = 256;   // точек вдоль линии разреза
 const st = { mode: q.get('mode') === '3d' ? '3d' : '2d', layer: +(q.get('layer') || 0), level: 4, composite: true,
   arrows: q.get('arrows') === '1', perFrame: 4, steps: 0, msPerStep: 0, verify: '', busy: false, dirty: true, line: null, lineAuto: true };
 let index, scen, gi, tape, grid, r, device, vol, pre;
-let viewPipe, viewBind, viewParams, viewOut, viewRead, derivePipe, deriveBind, samples, D, X;
+let lostMsg = '';
+let viewPipe, viewBind, viewParams, viewOut, viewRead, rhPipe, derivePipe, deriveBind, samples, D, X;
 let plan, cross, wind, secWind;
 // Шкала времени: кольцо снимков полей показа на GPU (после диагностики
 // отражаемости). Перемотка подставляет показу снимок вместо памяти модели,
@@ -39,6 +40,8 @@ const MOBILE = /iPhone|iPad/.test(navigator.userAgent) || (navigator.maxTouchPoi
 async function tlSetup() {
   tl.buf?.destroy(); tl.buf = null;
   tl.fields = TL_FIELDS.filter(n => tape.fields[n] !== undefined);
+  // относительная влажность в снимке - одним полем, посчитанным при снимке
+  if (HAS_RH()) tl.fields.push('rh');
   tl.stride = tape.fieldStride; tl.size = tl.fields.length * tl.stride;
   // бюджет: не больше, чем даёт устройство; при отказе - вдвое меньше, пока не создастся.
   // Без проверки неудачный буфер молча «пустой»: снимки копятся, показать нечего
@@ -56,13 +59,28 @@ async function tlSetup() {
   // снимок раз в минуту модели, реже - если не влезает весь прогон
   tl.every = tl.count ? Math.max(60, Math.ceil(scen.timax / tl.count / 60) * 60) : Infinity;
   tl.times = []; tl.head = 0; tl.next = tl.buf ? 0 : Infinity; tl.view = null; tl.srcs = new Map();
+  tl.rhBind = null;
+  if (tl.buf && tl.fields.includes('rh')) {
+    tl.rhParams = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    tl.rhBind = device.createBindGroup({ layout: rhPipe.getBindGroupLayout(0), entries: [
+      ...r.memEntries(0), { binding: 1, resource: { buffer: tl.rhParams } }, { binding: 2, resource: { buffer: tl.buf } }] });
+  }
   dbg(`шкала времени: ${tl.count} снимков по ${(tl.size / 2 ** 20).toFixed(0)} МБ, раз в ${tl.every} с`);
 }
 // снимок, если время дошло (в кодировщик кадра, после диагностики)
 function tlCapture(enc, t) {
   if (t < tl.next - 1e-6) return false;
   const slot = tl.head % tl.count, arena = tape.buffers.find(b => b.arena).id;
-  tl.fields.forEach((n, i) => r.copyOut(enc, r.base[arena] + tape.fields[n] / 4, tl.stride / 4, tl.buf, slot * tl.size + i * tl.stride));
+  tl.fields.forEach((n, i) => { if (n !== 'rh') r.copyOut(enc, r.base[arena] + tape.fields[n] / 4, tl.stride / 4, tl.buf, slot * tl.size + i * tl.stride); });
+  if (tl.rhBind) {
+    const fwm = n => r.base[arena] + tape.fields[n] / 4, words = tl.stride / 4;
+    device.queue.writeBuffer(tl.rhParams, 0, new Uint32Array([fwm('qv'), fwm('prs'), fwm('rho'),
+      (slot * tl.size + tl.fields.indexOf('rh') * tl.stride) / 4, words, 0, 0, 0]));
+    const wg = Math.ceil(words / 64), p = enc.beginComputePass();
+    p.setPipeline(rhPipe); p.setBindGroup(0, tl.rhBind);
+    p.dispatchWorkgroups(Math.min(wg, 32768), Math.ceil(wg / 32768));
+    p.end();
+  }
   tl.times[slot] = t; tl.head++;
   tl.srcs.delete(slot);
   while (tl.next <= t + 1e-6) tl.next += tl.every;
@@ -121,7 +139,11 @@ const LAYERS = [
   { name: 'Ветер', unit: 'м/с', lo: 0, hi: 40, level: true, color: v => ramp(SPEED, v) },
   // от радара: к радару - зелёный, от радара - красный (как у NWS)
   { name: 'Радиальная скорость', unit: 'м/с', lo: -30, hi: 30, level: true, radar: true, color: v => vrColor(v) },
+  { name: 'Относительная влажность', unit: '%', lo: 0, hi: 100, level: true, needs: ['qv', 'prs', 'rho'], color: v => ramp(RH, v) },
 ];
+// сухо - бурый, влажно - зелёный, насыщение - синий (над 100 - пересыщение над льдом и в облаке)
+const RH = [[0, [110, 70, 40]], [30, [170, 120, 60]], [60, [190, 190, 120]], [80, [70, 170, 80]], [95, [40, 120, 200]], [105, [120, 90, 230]]];
+const HAS_RH = () => LAYERS.at(-1).needs.every(n => tape.fields[n] !== undefined);
 function vrColor(v) {
   if (!(Math.abs(v) >= 0.5) || v > 1e8) return BG;
   const t = Math.min(1, Math.abs(v) / 30);
@@ -153,6 +175,28 @@ fn main(@builtin(global_invocation_id) g: vec3<u32>) {
   D[c(i, j, k)] = 0.25 * (corner(i, j, k) + corner(i + 1, j, k) + corner(i, j + 1, k) + corner(i + 1, j + 1, k));
 }`;
 
+// Относительная влажность над водой, %. T - из уравнения состояния модели
+// (rho = prs / (T (rd + rv qv)), update_rho_prs), насыщение - формула Болтона.
+const RH_FN = `fn rh_of(qv: f32, prs: f32, rho: f32) -> f32 {
+  let q = max(qv, 0.0);
+  let t = prs / (rho * (287.04 + 461.5 * q));
+  let es = 611.2 * exp(17.67 * (t - 273.15) / (t - 29.65));
+  let qs = 0.622 * es / max(prs - es, 1.0);
+  return 100.0 * q / qs;
+}`;
+// снимок шкалы времени: поле влажности поэлементно по всему полю арены
+const RH_WGSL = `
+@group(0) @binding(0) var<storage, read> M: array<u32>;
+@group(0) @binding(1) var<storage, read> Q: array<u32, 8>;
+@group(0) @binding(2) var<storage, read_write> T: array<f32>;
+${RH_FN}
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) g: vec3<u32>) {
+  let n = g.x + g.y * 32768u * 64u;
+  if (n >= Q[4]) { return; }
+  T[Q[3] + n] = rh_of(bitcast<f32>(M[Q[0] + n]), bitcast<f32>(M[Q[1] + n]), bitcast<f32>(M[Q[2] + n]));
+}`;
+
 // ---- показ: карта (композит или уровень), разрез по точкам S, ветер на уровне
 const VIEW_WGSL = `
 @group(0) @binding(0) var<storage, read> M: array<u32>;
@@ -163,6 +207,7 @@ const VIEW_WGSL = `
 @group(0) @binding(5) var<storage, read> X: array<f32>;
 fn c(i: u32, j: u32, k: u32) -> u32 { return (i + 3u) + P[3] * ((j + 3u) + P[4] * k); }
 fn f(off: u32, i: u32, j: u32, k: u32) -> f32 { return bitcast<f32>(M[off + c(i, j, k)]); }
+${RH_FN}
 fn value(layer: u32, i: u32, j: u32, k: u32) -> f32 {
   switch (layer) {
     case 0u: { return f(P[9], i, j, k); }
@@ -175,8 +220,13 @@ fn value(layer: u32, i: u32, j: u32, k: u32) -> f32 {
       let v = 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k));
       return sqrt(u * u + v * v);
     }
-    case 7u: { return 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)); }
-    case 8u: { return 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k)); }
+    case 20u: { return 0.5 * (f(P[14], i, j, k) + f(P[14], i + 1u, j, k)); }
+    case 21u: { return 0.5 * (f(P[15], i, j, k) + f(P[15], i, j + 1u, k)); }
+    case 7u: {
+      // в снимке шкалы времени - готовое поле, вживую - из qv, prs, rho
+      if (P[24] != 0u) { return f(P[24], i, j, k); }
+      return rh_of(f(P[25], i, j, k), f(P[26], i, j, k), f(P[27], i, j, k));
+    }
     default: {
       // радиальная от радара в (P[18], P[19]) м; ветер относительно земли:
       // область движется со скоростью (umove, vmove) - P[20], P[21]
@@ -215,10 +265,10 @@ fn main(@builtin(global_invocation_id) g: vec3<u32>) {
     let b = mix(value(layer, i0, j1, k), value(layer, i1, j1, k), tx);
     O[nx * ny + k * P[8] + s] = mix(a, b, ty);
     // ветер в плоскости разреза: вдоль линии (направление P[22], P[23]) и w
-    let ua = mix(value(7u, i0, j0, k), value(7u, i1, j0, k), tx);
-    let ub = mix(value(7u, i0, j1, k), value(7u, i1, j1, k), tx);
-    let va = mix(value(8u, i0, j0, k), value(8u, i1, j0, k), tx);
-    let vb = mix(value(8u, i0, j1, k), value(8u, i1, j1, k), tx);
+    let ua = mix(value(20u, i0, j0, k), value(20u, i1, j0, k), tx);
+    let ub = mix(value(20u, i0, j1, k), value(20u, i1, j1, k), tx);
+    let va = mix(value(21u, i0, j0, k), value(21u, i1, j0, k), tx);
+    let vb = mix(value(21u, i0, j1, k), value(21u, i1, j1, k), tx);
     let wa = mix(value(1u, i0, j0, k), value(1u, i1, j0, k), tx);
     let wb = mix(value(1u, i0, j1, k), value(1u, i1, j1, k), tx);
     let o = nx * ny + nz * P[8] + 2u * nx * ny + 2u * (k * P[8] + s);
@@ -341,7 +391,7 @@ async function init() {
   device = await adapter.requestDevice({ requiredLimits: {
     maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage } });
   device.addEventListener('uncapturederror', e => dbg('ОШИБКА GPU ' + e.error.message));
-  device.lost.then(i => post('видеокарта отключила страницу: ' + (i.message || i.reason)));
+  device.lost.then(i => { lostMsg = 'видеокарта отключила страницу: ' + (i.message || i.reason); post(lostMsg); });
   r = new Replayer(device, tape, kernels, sources);
   r.plan(true);
   post('сборка ядер');
@@ -385,7 +435,7 @@ async function init() {
 
   const arena = tape.buffers.find(b => b.arena).id;
   const fw = n => r.base[arena] + tape.fields[n] / 4;
-  viewParams = new Uint32Array(24);
+  viewParams = new Uint32Array(28);
   viewParams.set([grid.nx, grid.ny, grid.nz, grid.sJ, grid.sK, 0, 0, 0, NS,
     fw('dbz'), fw('w'), fw('qc'), fw('qi'), fw('th'), fw('u'), fw('v'), 0, grid.nx]);
   const pbuf = device.createBuffer({ size: viewParams.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
@@ -396,6 +446,7 @@ async function init() {
   viewOut = device.createBuffer({ size: words * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
   viewRead = device.createBuffer({ size: words * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   viewPipe = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(VIEW_WGSL) }), entryPoint: 'main' } });
+  rhPipe = HAS_RH() ? await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(RH_WGSL) }), entryPoint: 'main' } }) : null;
   derivePipe = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(DERIVE_WGSL) }), entryPoint: 'main' } });
   bindView();
   setLine(0, Ly / 2, Lx, Ly / 2);
@@ -419,6 +470,9 @@ function bindView() {
   const arena = tape.buffers.find(b => b.arena).id;
   const fw = src ? src.fw : n => r.base[arena] + tape.fields[n] / 4;
   ['dbz', 'w', 'qc', 'qi', 'th', 'u', 'v'].forEach((n, i) => { viewParams[9 + i] = tape.fields[n] !== undefined ? fw(n) : 0; });
+  const has = n => tape.fields[n] !== undefined;
+  viewParams[24] = src && tl.fields.includes('rh') ? fw('rh') : 0;
+  ['qv', 'prs', 'rho'].forEach((n, i) => { viewParams[25 + i] = !src && has(n) ? r.base[arena] + tape.fields[n] / 4 : 0; });
   device.queue.writeBuffer(pbuf, 0, viewParams);
   vol?.setSource(src);
   viewBind = device.createBindGroup({ layout: viewPipe.getBindGroupLayout(0), entries: [
@@ -599,7 +653,11 @@ async function loop() {
   for (;;) {
     if (!st.busy && (st.perFrame || st.dirty || st.once)) {
       st.busy = true; st.dirty = false;
-      try { await frame(); } catch (e) { post('ошибка кадра: ' + (e?.message || e)); st.busy = false; return; }
+      try { await frame(); } catch (e) {
+        // при потере видеокарты кадр падает раньше, чем приходит причина: ждём её, она важнее
+        await Promise.race([device.lost, new Promise(ok => setTimeout(ok, 1000))]);
+        post(lostMsg || 'ошибка кадра: ' + (e?.message || e)); st.busy = false; return;
+      }
       st.busy = false;
       if (st.once) { st.once = false; setSpeed(0); }
     } else {
@@ -811,7 +869,8 @@ function wire() {
   const panel = $('panel'), tog = $('toggle');
   tog.onclick = () => { panel.classList.toggle('hidden'); tog.classList.toggle('closed'); $('hud').classList.toggle('low');
     setTimeout(poke, 260); };
-  $('layer').innerHTML = LAYERS.map((L, i) => `<option value="${i}">${L.name}</option>`).join('');
+  if (!LAYERS[st.layer] || (LAYERS[st.layer].needs && !HAS_RH())) st.layer = 0;
+  $('layer').innerHTML = LAYERS.map((L, i) => L.needs && !HAS_RH() ? '' : `<option value="${i}">${L.name}</option>`).join('');
   $('layer').value = st.layer;
   const lv = () => { $('levelv').textContent = `${km(ZH[st.level])} км`; };
   const shown = () => {
