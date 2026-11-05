@@ -497,6 +497,7 @@
 "рельеф: nz плоской сетки не совпадает": "terrain: nz of the flat grid does not match",
 "сборка сценария": "building scenario",
 "сборка ядер": "building kernels",
+"сборка ядра {0}: {1} с, долго только в первый раз, дальше из кэша": "building kernel {0}: {1} s, slow only the first time, cached afterwards",
 "свои точки": "custom points",
 "свой пресет": "custom preset",
 "свой файл": "custom file",

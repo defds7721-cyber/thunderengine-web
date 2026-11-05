@@ -243,10 +243,12 @@ export class Replayer {
       // По одной: десятки одновременных createComputePipelineAsync в WebKit
       // зависали без нагрузки на процессор.
       const t0 = performance.now();
+      this.onCompile?.(op.name);
       const desc = { layout: this.layout, compute: { module: this.modules.get(mkey), entryPoint: 'main',
         constants: { WGX: op.tg[0], WGY: op.tg[1], WGZ: op.tg[2] } } };
       try { this.pipes.set(op.pkey, await d.createComputePipelineAsync(desc)); }
       catch (e) { throw new Error(`конвейер ${op.pkey}: ${e.reason || ''} ${e.message || e}`); }
+      this.onCompile?.(null);
       const dt = performance.now() - t0;
       if (dt > 2000 && this.onSlow) this.onSlow(op.pkey, dt);
     }

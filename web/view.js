@@ -345,6 +345,17 @@ async function init() {
   r = new Replayer(device, tape, kernels, sources);
   r.plan(true);
   post('сборка ядер');
+  // тяжёлое ядро драйвер может собирать минутами; показываем, что идёт и сколько
+  let tick = null;
+  r.onCompile = name => {
+    clearInterval(tick);
+    if (!name) return;
+    const t0 = performance.now();
+    tick = setInterval(() => {
+      const s = Math.round((performance.now() - t0) / 1000);
+      if (s >= 3) hud.textContent = `сборка ядра ${name}: ${s} с, долго только в первый раз, дальше из кэша`;
+    }, 1000);
+  };
   await r.build();
   post('загрузка состояния');
   if (live) {
