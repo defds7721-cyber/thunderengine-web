@@ -444,7 +444,9 @@ async function init() {
   samples = device.createBuffer({ size: NS * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
   const words = grid.nx * grid.ny + grid.nz * NS + 2 * grid.nx * grid.ny + 2 * grid.nz * NS;
   viewOut = device.createBuffer({ size: words * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-  viewRead = device.createBuffer({ size: words * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  // последние слова принимают GPU-счётчики вершин из Volume; они позволяют
+  // обнаружить усечение и увеличить меш до следующей сборки.
+  viewRead = device.createBuffer({ size: words * 4 + SURFACES.length * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   viewPipe = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(VIEW_WGSL) }), entryPoint: 'main' } });
   rhPipe = HAS_RH() ? await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(RH_WGSL) }), entryPoint: 'main' } }) : null;
   derivePipe = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code: r.wgsl(DERIVE_WGSL) }), entryPoint: 'main' } });
@@ -607,17 +609,20 @@ async function frame() {
     p.dispatchWorkgroups(Math.ceil(grid.nx / 4), Math.ceil(grid.ny / 4), Math.ceil(grid.nz / 4));
     p.end();
   }
-  if (st.mode === '3d') vol.encodeBuild(enc);
+  if (st.mode === '3d') vol.encodeBuild(enc, viewRead, viewOut.size);
   const pass = enc.beginComputePass();
   pass.setPipeline(viewPipe); pass.setBindGroup(0, viewBind);
   pass.dispatchWorkgroups(Math.ceil(Math.max(grid.nx, NS) / 8), Math.ceil(Math.max(grid.ny, grid.nz) / 8), 3);
   pass.end();
-  enc.copyBufferToBuffer(viewOut, 0, viewRead, 0, viewRead.size);
+  enc.copyBufferToBuffer(viewOut, 0, viewRead, 0, viewOut.size);
   const t0 = performance.now();
   device.queue.submit([enc.finish()]);
   await viewRead.mapAsync(GPUMapMode.READ);
   const dt = performance.now() - (live ? tf : t0);
   const all = new Float32Array(viewRead.getMappedRange().slice(0));
+  const buildCounts = new Uint32Array(all.buffer, viewOut.size, SURFACES.length);
+  const meshLimitErrors = st.mode === '3d' ? vol.checkBuildCounts(buildCounts) : [];
+  if (st.mode === '3d' && vol.capacityChanged) st.dirty = true;
   viewRead.unmap();
   if (done) { st.steps += done; st.msPerStep = st.msPerStep ? st.msPerStep * 0.8 + 0.2 * dt / done : dt / done; }
   plan = all.subarray(0, grid.nx * grid.ny);
@@ -633,6 +638,7 @@ async function frame() {
   }
   hudTime();
   kv();
+  if (meshLimitErrors.length) post('объёмная поверхность не помещается в предел буфера GPU: ' + meshLimitErrors.join('; '));
 }
 
 // пока линию не трогали - через самое сильное эхо, вдоль длинной стороны
