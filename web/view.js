@@ -570,9 +570,6 @@ function setLine(ax, ay, bx, by) {
 
 // Кадр: n шагов модели, отражаемость, поля для показа.
 async function frame() {
-  // Режим фиксируем на весь кадр: UI может переключить 2D/3D, пока кадр
-  // ждёт GPU readback, и иначе проверка счётчиков увидит чужой режим.
-  const mode3d = st.mode === '3d';
   if (tl.view != null && st.perFrame) tlLive();
   const left = live?.run.adaptive ? (modelTime() < scen.timax - 1e-6 ? Infinity : 0)
     : Math.max(0, Math.round(scen.timax / tape.dt) - st.steps);
@@ -582,9 +579,9 @@ async function frame() {
   if (n && tl.buf && tl.view == null && modelTime() >= tl.next - 1e-6) n = 0;
   else if (n && tl.buf && !live?.run.adaptive) n = Math.min(n, Math.max(1, Math.ceil((tl.next - st.steps * tape.dt) / tape.dt - 1e-9)));
   if (!left && st.perFrame) { setSpeed(0); }
-  const layer = mode3d ? 0 : st.layer;
+  const layer = st.mode === '3d' ? 0 : st.layer;
   const L = LAYERS[layer];
-  const composite = mode3d || L.level === false || (L.level === 'opt' && st.composite);
+  const composite = st.mode === '3d' || L.level === false || (L.level === 'opt' && st.composite);
   viewParams[5] = layer; viewParams[6] = st.level; viewParams[7] = composite ? 1 : 0;
   const pf = new Float32Array(viewParams.buffer);
   pf[18] = st.radar[0]; pf[19] = st.radar[1]; pf[20] = st.move[0]; pf[21] = st.move[1];
@@ -606,13 +603,13 @@ async function frame() {
   if (n && !live) r.encodeSteps(enc, n, false);
   // время нового состояния: счётчик шагов растёт после кадра
   if (tl.view == null) { r.encodeDiag(enc); if (tlCapture(enc, live?.run.adaptive ? modelTime() : (st.steps + done) * tape.dt)) tlUI(); }
-  if ((!mode3d && layer === 2) || (mode3d && vol.needsZeta)) {
+  if ((st.mode === '2d' && layer === 2) || (st.mode === '3d' && vol.needsZeta)) {
     const p = enc.beginComputePass();
     p.setPipeline(derivePipe); p.setBindGroup(0, deriveBind);
     p.dispatchWorkgroups(Math.ceil(grid.nx / 4), Math.ceil(grid.ny / 4), Math.ceil(grid.nz / 4));
     p.end();
   }
-  if (mode3d) vol.encodeBuild(enc, viewRead, viewOut.size);
+  if (st.mode === '3d') vol.encodeBuild(enc, viewRead, viewOut.size);
   const pass = enc.beginComputePass();
   pass.setPipeline(viewPipe); pass.setBindGroup(0, viewBind);
   pass.dispatchWorkgroups(Math.ceil(Math.max(grid.nx, NS) / 8), Math.ceil(Math.max(grid.ny, grid.nz) / 8), 3);
@@ -624,15 +621,15 @@ async function frame() {
   const dt = performance.now() - (live ? tf : t0);
   const all = new Float32Array(viewRead.getMappedRange().slice(0));
   const buildCounts = new Uint32Array(all.buffer, viewOut.size, SURFACES.length);
-  const meshLimitErrors = mode3d ? vol.checkBuildCounts(buildCounts) : [];
-  if (mode3d && vol.capacityChanged) st.dirty = true;
+  const meshLimitErrors = st.mode === '3d' ? vol.checkBuildCounts(buildCounts) : [];
+  if (st.mode === '3d' && vol.capacityChanged) st.dirty = true;
   viewRead.unmap();
   if (done) { st.steps += done; st.msPerStep = st.msPerStep ? st.msPerStep * 0.8 + 0.2 * dt / done : dt / done; }
   plan = all.subarray(0, grid.nx * grid.ny);
   cross = all.subarray(grid.nx * grid.ny, grid.nx * grid.ny + grid.nz * NS);
   wind = all.subarray(grid.nx * grid.ny + grid.nz * NS, grid.nx * grid.ny + grid.nz * NS + 2 * grid.nx * grid.ny);
   secWind = all.subarray(grid.nx * grid.ny + grid.nz * NS + 2 * grid.nx * grid.ny);
-  if (mode3d) {
+  if (st.mode === '3d') {
     vol.setPlane(resample(plan, LAYERS[0], PLANE, PLANE, true));
     drawVol();
   } else {
