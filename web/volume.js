@@ -26,7 +26,7 @@ export const SURFACES = [
   { key: 'tornado', label: 'Торнадо ζ', derived: true, iso: 0.1, colour: [0.58, 0.12, 0.95], group: 'rot' },
 ];
 
-const INITIAL_CAP = 900000;   // начальная ёмкость; при переполнении растёт до фактического числа вершин
+const CAP = 900000;   // вершин на поверхность
 export const PLANE = 512;   // подложка: композит dBZ, пересчитанный на равномерную картинку области
 
 const BUILD_WGSL = `
@@ -238,20 +238,18 @@ export class Volume {
     if (e) return e;
     const d = this.d;
     e = {
-      capacity: Math.min(INITIAL_CAP, this.maxVertices),
-      verts: null,
-      cnt: d.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.INDIRECT }),
+      verts: d.createBuffer({ size: CAP * 32, usage: GPUBufferUsage.STORAGE }),
+      cnt: d.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.INDIRECT }),
       params: d.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }),
       uni: d.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }),
     };
-    e.verts = d.createBuffer({ size: e.capacity * 32, usage: GPUBufferUsage.STORAGE });
     const t = this.tape, arena = t.buffers.find(b => b.arena).id;
     const fw = this.src ? this.src.fw : n => this.r.base[arena] + t.fields[n] / 4;
     const pi = new Int32Array(16), pf = new Float32Array(pi.buffer), pu = new Uint32Array(pi.buffer);
     pi.set([this.g.nx, this.g.ny, s.staggered ? this.g.nz + 1 : this.g.nz, this.g.sJ, this.g.sK]);
     if (!s.derived) { pu[5] = fw(s.field); pu[6] = s.second ? fw(s.second) : 0; pu[7] = s.second ? 1 : 0; }
     pf[8] = this.iso[s.key] ?? s.iso; pf[9] = s.sign || 1; pu[10] = s.derived ? 1 : 0;
-    pu[11] = this.geo.ox; pu[12] = this.geo.oy; pu[13] = s.staggered ? this.geo.ozf : this.geo.ozh; pu[14] = e.capacity;
+    pu[11] = this.geo.ox; pu[12] = this.geo.oy; pu[13] = s.staggered ? this.geo.ozf : this.geo.ozh; pu[14] = CAP;
     e.p = pi;
     d.queue.writeBuffer(e.params, 0, pi);
     e.bind = d.createBindGroup({ layout: this.buildPipe.getBindGroupLayout(0), entries: [
@@ -267,31 +265,6 @@ export class Volume {
     return e;
   }
 
-  get maxVertices() {
-    return Math.floor(Math.min(this.d.limits.maxBufferSize, this.d.limits.maxStorageBufferBindingSize) / 32);
-  }
-
-  // Счётчик C[0] содержит полный объём вывода даже при переполнении V.
-  // Пересоздаём буфер по фактическому размеру и на следующем кадре строим поверхность заново.
-  growSurface(e, needed) {
-    if (needed <= e.capacity) return true;
-    if (needed > this.maxVertices) return false;
-    const capacity = Math.min(this.maxVertices, Math.max(needed, Math.ceil(e.capacity * 1.5)));
-    e.verts.destroy();
-    e.capacity = capacity;
-    e.verts = this.d.createBuffer({ size: capacity * 32, usage: GPUBufferUsage.STORAGE });
-    new Uint32Array(e.p.buffer)[14] = capacity;
-    this.d.queue.writeBuffer(e.params, 0, e.p);
-    e.bind = this.d.createBindGroup({ layout: this.buildPipe.getBindGroupLayout(0), entries: [
-      ...(this.src ? this.src.entries : this.r.memEntries(0)), { binding: 1, resource: { buffer: e.params } },
-      { binding: 2, resource: { buffer: e.verts } }, { binding: 3, resource: { buffer: e.cnt } },
-      { binding: 4, resource: { buffer: this.geo.X } }, { binding: 5, resource: { buffer: this.D } }] });
-    e.drawBind = this.d.createBindGroup({ layout: this.drawBGL, entries: [
-      { binding: 0, resource: { buffer: e.uni } }, { binding: 1, resource: { buffer: e.verts } },
-      { binding: 2, resource: this.tex.createView() }, { binding: 3, resource: this.sampler }] });
-    return true;
-  }
-
   setIso(key, v) {
     this.iso[key] = v;
     const e = this.surf.get(key);
@@ -301,8 +274,7 @@ export class Volume {
   get needsZeta() { return SURFACES.some(s => s.derived && this.on.has(s.key)); }
 
   // Перестроить включённые поверхности по текущему состоянию модели.
-  encodeBuild(enc, countReadback = null, countOffset = 0) {
-    this.buildCounts = [];
+  encodeBuild(enc) {
     for (const s of SURFACES) {
       if (!this.on.has(s.key)) continue;
       const e = this.surface(s);
@@ -312,24 +284,7 @@ export class Volume {
       pass.dispatchWorkgroups(Math.ceil(this.g.nx / 4), Math.ceil(this.g.ny / 4), Math.ceil((s.staggered ? this.g.nz + 1 : this.g.nz) / 4));
       pass.setPipeline(this.finishPipe); pass.setBindGroup(0, e.finBind); pass.dispatchWorkgroups(1);
       pass.end();
-      if (countReadback) {
-        const slot = SURFACES.indexOf(s);
-        enc.copyBufferToBuffer(e.cnt, 0, countReadback, countOffset + slot * 4, 4);
-        this.buildCounts.push({ e, slot, key: s.key });
-      }
     }
-  }
-
-  checkBuildCounts(counts) {
-    const failed = [];
-    this.capacityChanged = false;
-    for (const { e, slot, key } of this.buildCounts) {
-      const needed = counts[slot];
-      if (needed <= e.capacity) continue;
-      if (!this.growSurface(e, needed)) failed.push(`${key}: ${needed.toLocaleString()} вершин, предел устройства ${this.maxVertices.toLocaleString()}`);
-      else this.capacityChanged = true;
-    }
-    return failed;
   }
 
   setPlane(rgba) {
